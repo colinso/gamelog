@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { RAWG_KEY } from '../constants';
-
   export let onSelect: (sel: { title: string; coverUrl: string | null; ttb: number }) => void;
 
   let query = '';
@@ -22,9 +20,17 @@
     timer = setTimeout(async () => {
       loading = true;
       try {
-        const r = await fetch(`https://api.rawg.io/api/games?search=${encodeURIComponent(q)}&key=${RAWG_KEY}&page_size=6&search_precise=true`);
-        const d = await r.json();
-        results = d.results ?? [];
+        const r = await fetch(`/api/rawg?q=${encodeURIComponent(q)}`);
+        if (r.ok) {
+          const data = await r.json();
+          results = data.map((g: any) => ({
+            id: g.id,
+            name: g.title,
+            background_image: g.coverUrl
+          }));
+        } else {
+          results = [];
+        }
       } catch { results = []; }
       loading = false;
     }, 400);

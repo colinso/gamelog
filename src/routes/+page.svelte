@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { browser } from '$app/environment';
   import { games, isSteamCover } from '../lib/stores';
-  import { STATUS_GROUPS, STATUS_MAP, RAWG_KEY } from '../lib/constants';
+  import { STATUS_GROUPS, STATUS_MAP } from '../lib/constants';
   import type { Game, Status } from '../lib/types';
   import SectionHead from '../lib/components/SectionHead.svelte';
   import GameCard from '../lib/components/GameCard.svelte';
@@ -19,11 +19,6 @@
   let fetchProgress: { done: number; total: number } | null = null;
   let ttbProgress: { done: number; total: number } | null = null;
   let steamSyncing = false;
-
-  // Persist to localStorage on change (browser only)
-  $: if (browser) {
-    localStorage.setItem('archive_v2', JSON.stringify($games));
-  }
 
   $: counts = $games.reduce((c, g) => { c[g.status] = (c[g.status] ?? 0) + 1; return c; }, {} as Record<string, number>);
 
@@ -93,10 +88,12 @@
       if (cancelled()) break;
       const g = missing[i];
       try {
-        const r = await fetch(`https://api.rawg.io/api/games?search=${encodeURIComponent(g.title)}&key=${RAWG_KEY}&page_size=1&search_precise=true`);
-        const d = await r.json();
-        const img = d.results?.[0]?.background_image ?? null;
-        if (img) games.update({ ...g, coverUrl: img });
+        const r = await fetch(`/api/rawg?q=${encodeURIComponent(g.title)}`);
+        if (r.ok) {
+          const results = await r.json();
+          const img = results[0]?.coverUrl ?? null;
+          if (img) await games.updateGame({ ...g, coverUrl: img });
+        }
       } catch { /* ignore */ }
       fetchProgress = { done: i + 1, total: missing.length };
       if (i < missing.length - 1) await new Promise(r => setTimeout(r, 220));
@@ -117,7 +114,7 @@
           const results = await r.json();
           if (results[0]?.mainStory > 0) {
             const ttb = results[0].mainStory;
-            games.update({
+            await games.updateGame({
               ...g,
               ttb,
               hrsLeft: Math.max(0, ttb - g.hrsIn),
@@ -136,6 +133,27 @@
     let dead = false;
     const cancelled = () => dead;
     (async () => {
+      // Migrate from localStorage if exists
+      const localData = localStorage.getItem('archive_v2');
+      if (localData) {
+        try {
+          const parsed = JSON.parse(localData) as Game[];
+          console.info('[migration] Found localStorage data, importing', { count: parsed.length });
+          await fetch('/api/games', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(parsed),
+          });
+          localStorage.removeItem('archive_v2');
+          console.info('[migration] Migration complete, localStorage cleared');
+        } catch (err) {
+          console.error('[migration] Failed to migrate localStorage data', err);
+        }
+      }
+
+      // Load games from API
+      await games.load();
+
       // Auto-sync Steam if it's been more than an hour
       const lastSync = localStorage.getItem('steam_last_sync');
       const stale = !lastSync || Date.now() - new Date(lastSync).getTime() > 60 * 60 * 1000;
@@ -247,8 +265,8 @@
   <DetailModal
     game={detail}
     onClose={() => detail = null}
-    onUpdate={g => { games.update(g); detail = g; }}
-    onDelete={id => { games.delete(id); detail = null; }}
+    onUpdate={async g => { await games.updateGame(g); detail = g; }}
+    onDelete={async id => { await games.delete(id); detail = null; }}
   />
 {/if}
 

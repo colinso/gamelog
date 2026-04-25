@@ -1,12 +1,11 @@
 <script lang="ts">
   import { STATUS_GROUPS, PLATFORMS } from '../constants';
-  import { nextId } from '../stores';
   import type { Game, Status } from '../types';
   import RAWGSearch from './RAWGSearch.svelte';
   import Stars from './Stars.svelte';
 
   export let onClose: () => void;
-  export let onAdd: (game: Game) => void;
+  export let onAdd: (game: Omit<Game, 'id'>) => void;
 
   let f = { title: '', platform: 'PC', status: 'notStarted' as Status, hrsIn: '', ttb: '', rating: null as number | null, coop: false, notes: '', coverUrl: null as string | null };
 
@@ -39,7 +38,7 @@
     if (!f.title.trim()) return;
     const hrsIn = parseFloat(f.hrsIn) || 0;
     const ttb = parseFloat(f.ttb) || 0;
-    onAdd({ id: nextId(), ...f, hrsIn, ttb, hrsLeft: Math.max(0, ttb - hrsIn) });
+    onAdd({ ...f, hrsIn, ttb, hrsLeft: Math.max(0, ttb - hrsIn) });
     onClose();
   }
 </script>

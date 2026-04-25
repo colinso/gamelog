@@ -56,7 +56,7 @@ IGDB_CLIENT_ID=<your_twitch_oauth_client_id>
 IGDB_CLIENT_SECRET=<your_twitch_oauth_client_secret>
 STEAM_API_KEY=<your_steam_api_key>
 STEAM_ACCOUNT_ID=<your_steam_account_id>
-RAWG_API_KEY=<optional_rawg_key>
+RAWG_API_KEY=<your_rawg_api_key>
 ```
 
 **Getting credentials:**

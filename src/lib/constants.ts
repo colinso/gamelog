@@ -14,8 +14,6 @@ export const STATUS_MAP = Object.fromEntries(STATUS_GROUPS.map(s => [s.key, s]))
 
 export const PLATFORMS = ['PC', 'PS5', 'PS4', 'Xbox', 'Switch', 'Mobile', 'Other'];
 
-export const RAWG_KEY = 'aa01ffba657144a2bf7f6752223e2bba';
-
 export const INITIAL_GAMES: Game[] = [
   { id: 1,  title: 'Hades II',               platform: 'PC',  status: 'inProgress',  hrsIn: 31.2, ttb: 33,    hrsLeft: 1.8,   rating: 9,    coop: false, coverUrl: null },
   { id: 2,  title: "Baldur's Gate 3",         platform: 'PC',  status: 'inProgress',  hrsIn: 49.3, ttb: 72.1,  hrsLeft: 22.8,  rating: 10,   coop: true,  coverUrl: null },
