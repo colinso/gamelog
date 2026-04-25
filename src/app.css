@@ -1,0 +1,125 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #111;
+  --s1: #191919;
+  --s2: #222;
+  --s3: #2c2c2c;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.13);
+  --text: #efefef;
+  --t2: #888;
+  --t3: #444;
+  --accent: #a3e635;
+  --mono: 'JetBrains Mono', monospace;
+  --c-ip: #a3e635;
+  --c-os: #f59e0b;
+  --c-pn: #60a5fa;
+  --c-ns: #555;
+  --c-wl: #a78bfa;
+  --c-bt: #34d399;
+  --c-ab: #f87171;
+}
+
+/* Retro Purple */
+.theme-retro {
+  --bg: #0d0820; --s1: #130d2e; --s2: #1d1440; --s3: #26194f;
+  --border: rgba(120,80,255,0.15); --border2: rgba(120,80,255,0.3);
+  --accent: oklch(65% 0.25 285); --text: #e8deff; --t2: #9880cc; --t3: #5544aa;
+  --c-ip: oklch(65% 0.22 285); --c-os: #c084fc; --c-pn: #60a5fa;
+  --c-bt: #22c55e; --c-ab: #ef4444; --c-wl: #a855f7; --c-ns: #5544aa;
+}
+
+/* Pixel Ocean */
+.theme-pixel {
+  --bg: #060e18; --s1: #0a1625; --s2: #0f2035; --s3: #152840;
+  --border: rgba(0,180,255,0.12); --border2: rgba(0,180,255,0.28);
+  --accent: #00d4ff; --text: #ddeeff; --t2: #5588aa; --t3: #223344;
+  --c-ip: #00d4ff; --c-os: #7b2fff; --c-pn: #4499ff;
+  --c-bt: #00ff88; --c-ab: #ff4466; --c-wl: #aa44ff; --c-ns: #334455;
+  --mono: 'VT323', monospace;
+}
+
+/* Game Boy */
+.theme-gameboy {
+  --bg: #3a3a3a; --s1: #444444; --s2: #505050; --s3: #5c5c5c;
+  --border: rgba(155,188,15,0.25); --border2: rgba(155,188,15,0.5);
+  --accent: #9bbc0f; --text: #e8e8e0; --t2: #a8a8a0; --t3: #707068;
+  --c-ip: #9bbc0f; --c-os: #e91e8c; --c-pn: #e91e8c;
+  --c-bt: #9bbc0f; --c-ab: #e91e8c; --c-wl: #e91e8c; --c-ns: #505050;
+  --mono: 'VT323', monospace;
+}
+
+/* VT323 reads well at larger sizes — scale everything up for both themes */
+.theme-pixel .logo,
+.theme-gameboy .logo           { font-size: 32px !important; letter-spacing: 1px; }
+
+.theme-pixel .title,
+.theme-gameboy .title,
+.theme-pixel .np-title,
+.theme-gameboy .np-title,
+.theme-pixel .modal-title,
+.theme-gameboy .modal-title    { font-size: 18px !important; line-height: 1.5; }
+
+.theme-pixel .name,
+.theme-gameboy .name,
+.theme-pixel .ftab,
+.theme-gameboy .ftab,
+.theme-pixel .btn-add,
+.theme-gameboy .btn-add,
+.theme-pixel .btn-util,
+.theme-gameboy .btn-util,
+.theme-pixel .game-count,
+.theme-gameboy .game-count,
+.theme-pixel .search-input,
+.theme-gameboy .search-input,
+.theme-pixel .form-input,
+.theme-gameboy .form-input,
+.theme-pixel .btn-primary,
+.theme-gameboy .btn-primary,
+.theme-pixel .btn-secondary,
+.theme-gameboy .btn-secondary,
+.theme-pixel .toggle-label,
+.theme-gameboy .toggle-label,
+.theme-pixel .setting-label,
+.theme-gameboy .setting-label  { font-size: 16px !important; }
+
+.theme-pixel .eyebrow,
+.theme-gameboy .eyebrow,
+.theme-pixel .dstat-label,
+.theme-gameboy .dstat-label,
+.theme-pixel .btn-sm,
+.theme-gameboy .btn-sm,
+.theme-pixel .btn-close,
+.theme-gameboy .btn-close,
+.theme-pixel .btn-danger,
+.theme-gameboy .btn-danger,
+.theme-pixel .form-label,
+.theme-gameboy .form-label,
+.theme-pixel .pct,
+.theme-gameboy .pct,
+.theme-pixel .hrs,
+.theme-gameboy .hrs,
+.theme-pixel .ttb,
+.theme-gameboy .ttb,
+.theme-pixel .platform,
+.theme-gameboy .platform,
+.theme-pixel .bar-pct,
+.theme-gameboy .bar-pct,
+.theme-pixel .count,
+.theme-gameboy .count          { font-size: 14px !important; }
+
+.theme-pixel .dstat-val,
+.theme-gameboy .dstat-val      { font-size: 18px !important; }
+
+
+body {
+  margin: 0;
+}
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--s3); }
+
+button { cursor: pointer; font-family: var(--mono); border: none; outline: none; }
+input, select, textarea { font-family: var(--mono); background: none; color: var(--text); }
