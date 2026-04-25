@@ -2,6 +2,9 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
+# Install build dependencies for native modules (better-sqlite3)
+RUN apk add --no-cache python3 make g++
+
 # Copy package files
 COPY package*.json ./
 
@@ -27,6 +30,7 @@ WORKDIR /app
 COPY --from=builder /app/build ./build
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./
+COPY --from=builder /app/src/lib/server/schema.sql ./build/server/chunks/
 
 # Create data directory for SQLite
 RUN mkdir -p /app/data
