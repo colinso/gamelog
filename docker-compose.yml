@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  gamelog:
+    build: .
+    container_name: gamelog
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DB_PATH=/app/data/gamelog.db
+      - IGDB_CLIENT_ID=${IGDB_CLIENT_ID}
+      - IGDB_CLIENT_SECRET=${IGDB_CLIENT_SECRET}
+      - STEAM_API_KEY=${STEAM_API_KEY}
+      - STEAM_ACCOUNT_ID=${STEAM_ACCOUNT_ID}
+      - RAWG_API_KEY=${RAWG_API_KEY}
+    volumes:
+      - ./data:/app/data
+    networks:
+      - gamelog-network
+
+networks:
+  gamelog-network:
+    driver: bridge

@@ -38,8 +38,8 @@ A SvelteKit PWA for tracking your game library, playtime, and progress across pl
   - [IGDB](https://api-docs.igdb.com/) – game metadata & TTB
   - [RAWG](https://rawg.io/) – cover art search
   - [Steam](https://partner.steamgames.com/doc/webapi) – owned games & playtime
-- **Storage**: Browser localStorage (JSON)
-- **Deployment**: Node.js (self-hosted on home server)
+- **Storage**: SQLite (server-side, persisted to `data/gamelog.db`)
+- **Deployment**: Docker + docker-compose (self-hosted on home server)
 
 ## Getting Started
 
@@ -72,10 +72,98 @@ npm run dev
 ```
 
 ### Build & Deploy
+
+**Local (Node.js)**
 ```bash
 npm run build
 # Outputs to build/ directory
 node build/index.js  # Start on port 3000 (configurable via PORT env var)
+```
+
+**Docker**
+```bash
+# Build and run with docker-compose
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop
+docker-compose down
+```
+
+## Deployment (Self-Hosted)
+
+### Prerequisites
+- Docker & docker-compose installed on your home server
+- `.env` file with all API keys (see Environment Variables section above)
+
+### Steps
+
+1. **Clone the repo** on your server:
+   ```bash
+   git clone https://github.com/colinso/gamelog.git
+   cd gamelog
+   ```
+
+2. **Create `.env` file** with your credentials:
+   ```bash
+   cp .env.example .env
+   # Edit .env and add your API keys
+   ```
+
+3. **Build and start the container**:
+   ```bash
+   docker-compose up -d
+   ```
+
+4. **Access the app**:
+   - Local: http://localhost:3000
+   - LAN: http://<server-ip>:3000
+
+5. **Persist data**:
+   - SQLite database is stored in `./data/gamelog.db`
+   - This directory is mounted as a volume, so data persists across container restarts
+   - Back up `./data/` regularly
+
+### Reverse Proxy (Optional)
+
+To expose GameLog behind a domain with SSL:
+
+**Nginx example:**
+```nginx
+server {
+    listen 443 ssl;
+    server_name gamelog.yourdomain.com;
+
+    ssl_certificate /path/to/cert.pem;
+    ssl_certificate_key /path/to/key.pem;
+
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
+
+**Caddy example:**
+```
+gamelog.yourdomain.com {
+    reverse_proxy localhost:3000
+}
+```
+
+### Updates
+
+To update to the latest version:
+```bash
+git pull
+docker-compose down
+docker-compose up -d --build
 ```
 
 ## Project Structure
@@ -83,21 +171,28 @@ node build/index.js  # Start on port 3000 (configurable via PORT env var)
 src/
 ├── lib/
 │   ├── components/        # Modals, search components
+│   ├── server/
+│   │   ├── db.ts          # SQLite connection + CRUD helpers
+│   │   └── schema.sql     # Database schema
 │   ├── types.ts           # Game interface
-│   ├── stores.ts          # Game store with CRUD + Steam sync
+│   ├── stores.ts          # Client-side store (calls API)
 │   ├── theme.ts           # Theme logic
 │   ├── constants.ts       # Status groups, platforms
 │   └── utils.ts           # Helpers (fmt, pct)
 ├── routes/
 │   ├── +page.svelte       # Main UI
 │   └── api/
+│       ├── games/         # CRUD endpoints for games
 │       ├── steam/         # GET /api/steam – fetch owned games
 │       ├── hltb/          # GET /api/hltb?q=... – search TTB via IGDB
-│       └── rawg/          # (future) cover art search
+│       └── rawg/          # GET /api/rawg?q=... – search covers
 └── app.html
 
 static/              # Icon, manifest, service worker
+data/                # SQLite database (gitignored)
 .env                 # Env vars (not committed)
+Dockerfile           # Docker build config
+docker-compose.yml   # Docker compose config
 ```
 
 ## Key Concepts
