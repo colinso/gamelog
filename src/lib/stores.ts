@@ -85,21 +85,24 @@ function createGamesStore() {
     async import(imported: Game[], merge: boolean) {
       if (merge) {
         // Bulk insert only new games
+        let newGames: Game[] = [];
         update(gs => {
           const existingIds = new Set(gs.map(g => g.id));
-          const newGames = imported.filter(g => !existingIds.has(g.id));
-
-          // Send to server
-          if (newGames.length > 0) {
-            fetch('/api/games', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(newGames),
-            });
-          }
-
-          return [...gs, ...newGames];
+          newGames = imported.filter(g => !existingIds.has(g.id));
+          return gs; // Return unchanged for now
         });
+
+        // Send to server
+        if (newGames.length > 0) {
+          await fetch('/api/games', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newGames),
+          });
+        }
+
+        // Now update with new games
+        update(gs => [...gs, ...newGames]);
       } else {
         // Replace all (this would need a "delete all" endpoint, or just bulk insert and reload)
         await fetch('/api/games', {

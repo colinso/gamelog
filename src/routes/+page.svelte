@@ -72,7 +72,7 @@
         return;
       }
 
-      games.steamSync(steamGames);
+      await games.steamSync(steamGames);
       localStorage.setItem('steam_last_sync', new Date().toISOString());
       console.info('[steam-sync] Completed client sync', { importedCount: steamGames.length });
     } catch (err) {
@@ -319,7 +319,7 @@
   <SettingsModal
     onClose={() => showSettings = false}
     games={$games}
-    onImport={(imported, merge) => games.import(imported, merge)}
+    onImport={async (imported, merge) => await games.import(imported, merge)}
     onSteamSync={syncSteam}
     {steamSyncing}
     {showHidden}
@@ -328,7 +328,7 @@
 {/if}
 
 {#if showAdd}
-  <AddModal onClose={() => showAdd = false} onAdd={g => games.add(g)} />
+  <AddModal onClose={() => showAdd = false} onAdd={async g => await games.add(g)} />
 {/if}
 
 {#if detail}
