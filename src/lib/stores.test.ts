@@ -317,7 +317,7 @@ describe('Steam Sync', () => {
     expect(updateBody.coverUrl).toBe('https://steamstatic.com/new-cover.jpg');
   });
 
-  it('should update status from notStarted to inProgress when hours played', async () => {
+  it('should NOT change status of existing games during sync (user-set status is preserved)', async () => {
     mockGames = [
       {
         id: 1,
@@ -340,7 +340,7 @@ describe('Steam Sync', () => {
       {
         steamAppId: 123,
         title: 'Not Started Game',
-        hrsIn: 2, // Now has hours played
+        hrsIn: 2, // Steam thinks it's been played
         coverUrl: 'https://steamstatic.com/cover.jpg',
         status: 'inProgress',
       },
@@ -352,11 +352,11 @@ describe('Steam Sync', () => {
       (call: any[]) => call[1]?.method === 'PATCH'
     );
     const updateBody = JSON.parse(patchCalls[0][1].body);
-    // Should update status to inProgress
-    expect(updateBody.status).toBe('inProgress');
+    // Status must NOT be overwritten by Steam sync
+    expect(updateBody.status).toBe('notStarted');
   });
 
-  it('should preserve non-notStarted status even with hours played', async () => {
+  it('should preserve all user-set statuses (beat, abandoned, etc.) during sync', async () => {
     mockGames = [
       {
         id: 1,

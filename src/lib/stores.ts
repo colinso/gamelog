@@ -136,14 +136,13 @@ function createGamesStore() {
         }
 
         if (existing) {
-          // Update existing game
+          // Update existing game — never overwrite user-set status
           const updated: Game = {
             ...existing,
             steamAppId: sg.steamAppId,
             hrsIn: sg.hrsIn,
             hrsLeft: Math.max(0, (existing.ttb || 0) - sg.hrsIn),
             coverUrl: (!existing.coverUrl || isSteamCover(existing.coverUrl)) ? sg.coverUrl : existing.coverUrl,
-            status: existing.status === 'notStarted' && sg.hrsIn > 0 ? 'inProgress' : existing.status,
           };
           updates.push(updated);
         } else {
