@@ -39,10 +39,6 @@
     return { destroy: () => ro.disconnect() };
   }
 
-  function visibleCount(key: string) {
-    return (PAGE_ROWS + (extraRows[key] ?? 0)) * gridCols;
-  }
-
   function showMore(key: string) {
     extraRows = { ...extraRows, [key]: (extraRows[key] ?? 0) + PAGE_ROWS };
   }
@@ -51,6 +47,11 @@
     const { [key]: _, ...rest } = extraRows;
     extraRows = rest;
   }
+
+  // Reactive map so Svelte tracks extraRows and gridCols as dependencies
+  $: visibleCounts = Object.fromEntries(
+    STATUS_GROUPS.map(sg => [sg.key, (PAGE_ROWS + (extraRows[sg.key] ?? 0)) * gridCols])
+  );
 
   $: counts = $games.reduce((c, g) => { c[g.status] = (c[g.status] ?? 0) + 1; return c; }, {} as Record<string, number>);
 
@@ -345,7 +346,7 @@
           <div class="empty">nothing here yet</div>
         {:else}
           <div class="card-grid" use:gridObserver>
-            {#each group.games.slice(0, visibleCount(group.key)) as g (g.id)}
+            {#each group.games.slice(0, visibleCounts[group.key]) as g (g.id)}
               <GameCard
                 game={g}
                 onClick={() => detail = g}
@@ -355,9 +356,9 @@
               />
             {/each}
           </div>
-          {#if group.games.length > visibleCount(group.key)}
+          {#if group.games.length > visibleCounts[group.key]}
             <button class="btn-show-more" on:click={() => showMore(group.key)}>
-              show {group.games.length - visibleCount(group.key)} more
+              show {group.games.length - visibleCounts[group.key]} more
             </button>
           {:else if (extraRows[group.key] ?? 0) > 0}
             <button class="btn-show-more" on:click={() => showLess(group.key)}>
