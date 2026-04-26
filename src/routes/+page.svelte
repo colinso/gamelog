@@ -4,6 +4,7 @@
   import { games, isSteamCover } from '../lib/stores';
   import type { SteamGame } from '../lib/stores';
   import { STATUS_GROUPS, STATUS_MAP } from '../lib/constants';
+  import { fmt } from '../lib/utils';
   import type { Game, Status } from '../lib/types';
   import SectionHead from '../lib/components/SectionHead.svelte';
   import GameCard from '../lib/components/GameCard.svelte';
@@ -333,7 +334,11 @@
       <button class="logo-btn" on:click={() => { filter = 'all'; search = ''; }} title="Go home">
         <div class="logo">gamelog</div>
       </button>
-      <div class="game-count">{$games.length} games</div>
+      {#if nowPlaying.length > 0}
+        <div class="game-count">{fmt(nowPlaying.reduce((s, g) => s + (g.hrsLeft ?? 0), 0))}h left playing</div>
+      {:else}
+        <div class="game-count">{$games.length} games</div>
+      {/if}
     </div>
     <div class="header-right">
       <div class="search-wrap">
@@ -343,8 +348,14 @@
           <button type="button" class="search-clear" on:click={() => search = ''} title="Clear search">×</button>
         {/if}
       </div>
-      <a href="/stats" class="btn-util btn-stats" title="Stats">▃▆█</a>
       <button class="btn-add" on:click={() => showAdd = true}>+ new game</button>
+      <a href="/stats" class="btn-gear btn-stats" title="Stats">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+          <rect x="0" y="9" width="4" height="7"/>
+          <rect x="6" y="5" width="4" height="11"/>
+          <rect x="12" y="1" width="4" height="15"/>
+        </svg>
+      </a>
       <button class="btn-gear" on:click={() => showSettings = true} title="Settings">⚙</button>
     </div>
   </header>
@@ -536,10 +547,11 @@
     text-decoration: none; display: inline-flex; align-items: center;
   }
   .btn-util:hover { color: var(--text); }
-  .btn-stats { letter-spacing: 1px; }
+  .btn-stats { text-decoration: none; }
   .btn-gear {
     background: transparent; border: none; color: var(--t2);
     font-size: 20px; cursor: pointer; transition: .15s; padding: 0 2px; line-height: 1;
+    display: inline-flex; align-items: center;
   }
   .btn-gear:hover { color: var(--text); }
   .btn-add {
