@@ -182,6 +182,6 @@
   .prog-wrap { margin-top: auto; }
   .bar-track { background: var(--s3); height: 2px; width: 100%; }
   .bar-fill { height: 100%; background: var(--c-ip); }
-  .bar-labels { display: flex; justify-content: space-between; margin-top: 4px; font-size: 9px; color: var(--t3); }
+  .bar-labels { display: flex; justify-content: space-between; margin-top: 4px; font-size: 9px; color: var(--t2); }
   .bar-pct { color: var(--c-ip); font-weight: 600; }
 </style>
