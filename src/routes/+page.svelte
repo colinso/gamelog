@@ -174,8 +174,9 @@
   }
 
   async function fetchMissingCovers(cancelled: () => boolean) {
-    // Fetch RAWG covers for games with no cover or only a Steam CDN cover
-    const missing = $games.filter(g => !g.coverUrl || isSteamCover(g.coverUrl));
+    // Only fetch for games with no cover at all — never auto-replace a Steam cover
+    // the user may have explicitly chosen it via the "Use Steam image" toggle
+    const missing = $games.filter(g => !g.coverUrl);
     if (!missing.length) return;
     fetchProgress = { done: 0, total: missing.length };
     for (let i = 0; i < missing.length; i++) {
