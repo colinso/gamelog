@@ -152,6 +152,12 @@ export function hideGame(id: number): boolean {
   return info.changes > 0;
 }
 
+export function deleteAllGames(): number {
+  const database = getDb();
+  const info = database.prepare('DELETE FROM games').run();
+  return info.changes;
+}
+
 export function bulkInsertGames(games: Omit<Game, 'id'>[]): number {
   const database = getDb();
   const stmt = database.prepare(`

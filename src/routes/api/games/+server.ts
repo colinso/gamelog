@@ -6,6 +6,7 @@ import {
   createGame,
   updateGame,
   deleteGame,
+  deleteAllGames,
   bulkInsertGames,
   hideGame
 } from '$lib/server/db';
@@ -79,14 +80,20 @@ export const PUT: RequestHandler = async ({ request }) => {
   }
 };
 
-// DELETE /api/games - Delete a game
+// DELETE /api/games - Delete a single game (body: {id}) or all games (no body / body: {all: true})
 export const DELETE: RequestHandler = async ({ request }) => {
   try {
-    const { id } = await request.json();
+    let body: any = {};
+    try { body = await request.json(); } catch { /* no body = delete all */ }
 
-    if (!id) throw error(400, 'Missing game ID');
+    if (body?.all) {
+      const count = deleteAllGames();
+      return json({ deleted: count });
+    }
 
-    const deleted = deleteGame(id);
+    if (!body?.id) throw error(400, 'Missing game ID');
+
+    const deleted = deleteGame(body.id);
     if (!deleted) throw error(404, 'Game not found');
 
     return json({ success: true });

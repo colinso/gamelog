@@ -18,3 +18,7 @@ export function pct(hrsIn: number, ttb: number): number {
   if (!ttb) return 0;
   return Math.min(100, Math.round((hrsIn / ttb) * 100));
 }
+
+export function isSteamCover(url: string | null | undefined): boolean {
+  return url?.includes('steamstatic.com') ?? false;
+}

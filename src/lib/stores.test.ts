@@ -356,6 +356,72 @@ describe('Steam Sync', () => {
     expect(updateBody.status).toBe('notStarted');
   });
 
+  it('should not decrease hrsIn if stored value is higher than Steam reports', async () => {
+    mockGames = [
+      {
+        id: 1,
+        title: 'Manually Tracked Game',
+        platform: 'PC',
+        status: 'inProgress',
+        hrsIn: 15,
+        ttb: 20,
+        hrsLeft: 5,
+        rating: null,
+        coop: false,
+        coverUrl: null,
+        steamAppId: 123,
+      },
+    ];
+
+    const { games } = await import('./stores');
+
+    const steamGames: SteamGame[] = [
+      {
+        steamAppId: 123,
+        title: 'Manually Tracked Game',
+        hrsIn: 10, // Steam reports fewer hours (e.g. playtime_forever lagged or user manually set higher)
+        coverUrl: 'https://steamstatic.com/cover.jpg',
+        status: 'inProgress',
+      },
+    ];
+
+    await games.steamSync(steamGames);
+
+    const patchCalls = (fetch as any).mock.calls.filter(
+      (call: any[]) => call[1]?.method === 'PATCH'
+    );
+    const updateBody = JSON.parse(patchCalls[0][1].body);
+    // Should keep the higher stored value, not decrease to Steam's lower value
+    expect(updateBody.hrsIn).toBe(15);
+  });
+
+  it('should import family-shared games (in recently-played but not owned)', async () => {
+    mockGames = []; // empty library — no owned games
+
+    const { games } = await import('./stores');
+
+    const steamGames: SteamGame[] = [
+      {
+        steamAppId: 999001,
+        title: 'Family Shared Game',
+        hrsIn: 3.5,
+        coverUrl: 'https://steamstatic.com/family-game.jpg',
+        status: 'onShelf',
+      },
+    ];
+
+    await games.steamSync(steamGames);
+
+    // Verify POST was called to create the family-shared game
+    expect(fetch).toHaveBeenCalledWith(
+      '/api/games',
+      expect.objectContaining({
+        method: 'POST',
+        body: expect.stringContaining('Family Shared Game'),
+      })
+    );
+  });
+
   it('should preserve all user-set statuses (beat, abandoned, etc.) during sync', async () => {
     mockGames = [
       {

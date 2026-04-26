@@ -1,5 +1,6 @@
 import { writable } from 'svelte/store';
 import type { Game, Status } from './types';
+import { isSteamCover } from './utils';
 
 export type SteamGame = {
   steamAppId: number;
@@ -9,9 +10,7 @@ export type SteamGame = {
   status: Status;
 };
 
-export function isSteamCover(url: string | null) {
-  return url?.includes('steamstatic.com') ?? false;
-}
+export { isSteamCover };
 
 function createGamesStore() {
   const { subscribe, set, update } = writable<Game[]>([]);
@@ -84,15 +83,14 @@ function createGamesStore() {
     // Import games (merge or replace)
     async import(imported: Game[], merge: boolean) {
       if (merge) {
-        // Bulk insert only new games
+        // Bulk insert only games whose ID isn't already in the library
         let newGames: Game[] = [];
         update(gs => {
           const existingIds = new Set(gs.map(g => g.id));
           newGames = imported.filter(g => !existingIds.has(g.id));
-          return gs; // Return unchanged for now
+          return gs;
         });
 
-        // Send to server
         if (newGames.length > 0) {
           await fetch('/api/games', {
             method: 'POST',
@@ -100,18 +98,22 @@ function createGamesStore() {
             body: JSON.stringify(newGames),
           });
         }
-
-        // Now update with new games
-        update(gs => [...gs, ...newGames]);
       } else {
-        // Replace all (this would need a "delete all" endpoint, or just bulk insert and reload)
+        // Clear existing library then bulk insert the imported games
+        await fetch('/api/games', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ all: true }),
+        });
         await fetch('/api/games', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(imported),
         });
-        set(imported);
       }
+
+      // Always reload from DB so IDs match what the server actually assigned
+      await this.load();
     },
 
     // Steam sync: merge Steam games with existing library
@@ -140,8 +142,8 @@ function createGamesStore() {
           const updated: Game = {
             ...existing,
             steamAppId: sg.steamAppId,
-            hrsIn: sg.hrsIn,
-            hrsLeft: Math.max(0, (existing.ttb || 0) - sg.hrsIn),
+            hrsIn: Math.max(sg.hrsIn, existing.hrsIn ?? 0),
+            hrsLeft: Math.max(0, (existing.ttb || 0) - Math.max(sg.hrsIn, existing.hrsIn ?? 0)),
             coverUrl: (!existing.coverUrl || isSteamCover(existing.coverUrl)) ? sg.coverUrl : existing.coverUrl,
           };
           updates.push(updated);

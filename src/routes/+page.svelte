@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { browser } from '$app/environment';
   import { games, isSteamCover } from '../lib/stores';
+  import type { SteamGame } from '../lib/stores';
   import { STATUS_GROUPS, STATUS_MAP } from '../lib/constants';
   import type { Game, Status } from '../lib/types';
   import SectionHead from '../lib/components/SectionHead.svelte';
@@ -77,40 +78,98 @@
       .filter(sg => sg.games.length > 0);
   })();
 
+  // Merge two SteamGame arrays by steamAppId — primary list wins; secondary adds
+  // family-shared games and updates hrsIn if higher.
+  function mergeByAppId(primary: SteamGame[], secondary: SteamGame[]): SteamGame[] {
+    const map = new Map(primary.map(g => [g.steamAppId, g]));
+    for (const g of secondary) {
+      const existing = map.get(g.steamAppId);
+      if (!existing) {
+        map.set(g.steamAppId, g); // family-shared: not in owned library
+      } else if (g.hrsIn > existing.hrsIn) {
+        map.set(g.steamAppId, { ...existing, hrsIn: g.hrsIn }); // take higher hours
+      }
+    }
+    return [...map.values()];
+  }
+
+  // Full sync: owned library + recently played merged (runs when >1hr stale or manual)
   async function syncSteam() {
-    console.info('[steam-sync] Starting client sync');
+    console.info('[steam-sync] Starting full client sync (owned + recently played)');
     steamSyncing = true;
     try {
-      const res = await fetch('/api/steam');
-      if (!res.ok) {
-        let message = `Steam sync failed (${res.status})`;
+      const [ownedRes, recentRes] = await Promise.all([
+        fetch('/api/steam'),
+        fetch('/api/steam/recent'),
+      ]);
+
+      if (!ownedRes.ok) {
+        let message = `Steam sync failed (${ownedRes.status})`;
         try {
-          const body = await res.json();
+          const body = await ownedRes.json();
           if (body?.error) message = body.error;
           console.error('[steam-sync] Server returned error', body);
         } catch (parseErr) {
           console.error('[steam-sync] Could not parse error response', parseErr);
         }
-        console.error('[steam-sync] Sync request failed', { status: res.status, statusText: res.statusText });
         alert(message);
         return;
       }
 
-      const steamGames = await res.json();
-      if (!Array.isArray(steamGames)) {
-        console.error('[steam-sync] Invalid payload shape', steamGames);
+      const ownedGames = await ownedRes.json();
+      if (!Array.isArray(ownedGames)) {
+        console.error('[steam-sync] Invalid owned-games payload', ownedGames);
         alert('Steam sync returned an invalid payload. Check console logs for details.');
         return;
       }
 
-      await games.steamSync(steamGames);
+      // Recently-played failures are non-fatal — we still sync the owned library
+      let recentGames: SteamGame[] = [];
+      if (recentRes.ok) {
+        const parsed = await recentRes.json();
+        if (Array.isArray(parsed)) recentGames = parsed;
+        else console.warn('[steam-sync] Ignoring invalid recently-played payload', parsed);
+      } else {
+        console.warn('[steam-sync] Recently-played sync failed, continuing with owned games only', {
+          status: recentRes.status,
+        });
+      }
+
+      const merged = mergeByAppId(ownedGames, recentGames);
+      await games.steamSync(merged);
       localStorage.setItem('steam_last_sync', new Date().toISOString());
-      console.info('[steam-sync] Completed client sync', { importedCount: steamGames.length });
+      console.info('[steam-sync] Completed full sync', {
+        owned: ownedGames.length,
+        recent: recentGames.length,
+        merged: merged.length,
+      });
     } catch (err) {
       console.error('[steam-sync] Network/client error during sync', err);
       alert('Steam sync failed due to a network or client error. Check console logs for details.');
     } finally {
       steamSyncing = false;
+    }
+  }
+
+  // Lightweight sync: only recently played — runs on every load when full sync is fresh
+  async function syncRecentSteam() {
+    console.info('[steam-recent] Syncing recently played games');
+    try {
+      const res = await fetch('/api/steam/recent');
+      if (!res.ok) {
+        console.warn('[steam-recent] Recently-played sync failed', { status: res.status });
+        return;
+      }
+      const recentGames = await res.json();
+      if (!Array.isArray(recentGames)) {
+        console.warn('[steam-recent] Invalid payload, skipping');
+        return;
+      }
+      await games.steamSync(recentGames);
+      console.info('[steam-recent] Completed recently-played sync', { count: recentGames.length });
+    } catch (err) {
+      // Non-fatal — app continues loading normally
+      console.warn('[steam-recent] Network error during recently-played sync', err);
     }
   }
 
@@ -136,6 +195,26 @@
     fetchProgress = null;
   }
 
+  // Fetch and apply TTB for a single game — used after manual add and during batch sync
+  async function fetchTtbForGame(g: Game) {
+    try {
+      const r = await fetch(`/api/hltb?q=${encodeURIComponent(g.title)}`);
+      if (r.ok) {
+        const results = await r.json();
+        if (results[0]?.mainStory > 0) {
+          const ttb = results[0].mainStory;
+          await games.updateGame({
+            ...g,
+            ttb,
+            hrsLeft: Math.max(0, ttb - g.hrsIn),
+            status: g.hrsIn > ttb ? 'beat' : g.status,
+          });
+        }
+      }
+    } catch { /* ignore */ }
+  }
+
+  // Batch TTB fetch for all games missing it — only called after a full sync
   async function fetchMissingTtb(cancelled: () => boolean) {
     const missing = $games.filter(g => g.ttb === 0);
     if (!missing.length) return;
@@ -143,21 +222,7 @@
     for (let i = 0; i < missing.length; i++) {
       if (cancelled()) break;
       const g = missing[i];
-      try {
-        const r = await fetch(`/api/hltb?q=${encodeURIComponent(g.title)}`);
-        if (r.ok) {
-          const results = await r.json();
-          if (results[0]?.mainStory > 0) {
-            const ttb = results[0].mainStory;
-            await games.updateGame({
-              ...g,
-              ttb,
-              hrsLeft: Math.max(0, ttb - g.hrsIn),
-              status: g.hrsIn > ttb ? 'beat' : g.status
-            });
-          }
-        }
-      } catch { /* ignore */ }
+      await fetchTtbForGame(g);
       ttbProgress = { done: i + 1, total: missing.length };
       if (i < missing.length - 1) await new Promise(r => setTimeout(r, 300));
     }
@@ -240,13 +305,21 @@
       // Load games from API
       await games.load(showHidden);
 
-      // Auto-sync Steam if it's been more than an hour
+      // Auto-sync Steam on every load:
+      // - Full sync (owned + recently played) if >1hr stale
+      // - Lightweight recently-played sync otherwise (keeps hours current)
       const lastSync = localStorage.getItem('steam_last_sync');
       const stale = !lastSync || Date.now() - new Date(lastSync).getTime() > 60 * 60 * 1000;
-      if (stale) await syncSteam();
+      if (stale) {
+        await syncSteam();
+        // After a full sync, fetch TTB for any games missing it (new imports, etc.)
+        await fetchMissingTtb(cancelled);
+      } else {
+        await syncRecentSteam();
+        // No TTB fetch here — recent sync only updates hours, not new game additions
+      }
 
       await fetchMissingCovers(cancelled);
-      await fetchMissingTtb(cancelled);
     })();
     return () => { dead = true; };
   });
@@ -386,7 +459,10 @@
 {/if}
 
 {#if showAdd}
-  <AddModal onClose={() => showAdd = false} onAdd={async g => await games.add(g)} />
+  <AddModal onClose={() => showAdd = false} onAdd={async g => {
+    const created = await games.add(g);
+    if (created && created.ttb === 0) await fetchTtbForGame(created);
+  }} />
 {/if}
 
 {#if detail}

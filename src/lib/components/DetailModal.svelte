@@ -1,10 +1,11 @@
 <script lang="ts">
   import { STATUS_MAP, PLATFORMS } from '../constants';
-  import { fmt, pct } from '../utils';
+  import { fmt, pct, isSteamCover } from '../utils';
   import type { Game, Status } from '../types';
   import CoverArt from './CoverArt.svelte';
   import Stars from './Stars.svelte';
   import RAWGSearch from './RAWGSearch.svelte';
+  import SteamSearch from './SteamSearch.svelte';
   import { STATUS_GROUPS } from '../constants';
 
   export let game: Game;
@@ -16,6 +17,11 @@
   let editing = false;
   let f = { ...game };
 
+  // Track whether the Steam image is active, and preserve the fallback (RAWG/upload)
+  // so toggling off restores it cleanly.
+  let useSteamImg = Boolean(f.steamAppId && isSteamCover(f.coverUrl));
+  let fallbackCover: string | null = isSteamCover(f.coverUrl) ? null : (f.coverUrl ?? null);
+
   $: sc = STATUS_MAP[game.status];
   $: prog = pct(game.hrsIn, game.ttb);
 
@@ -24,14 +30,28 @@
     editing = false;
   }
 
+  function toggleSteamImg(checked: boolean) {
+    useSteamImg = checked;
+    if (checked && f.steamAppId) {
+      f.coverUrl = `https://cdn.cloudflare.steamstatic.com/steam/apps/${f.steamAppId}/header.jpg`;
+    } else {
+      f.coverUrl = fallbackCover;
+    }
+  }
+
   function handleRAWGSelect(sel: { title: string; coverUrl: string | null; ttb: number }) {
     if (sel.title) f.title = sel.title;
-    if (sel.coverUrl) f.coverUrl = sel.coverUrl;
+    if (sel.coverUrl) {
+      fallbackCover = sel.coverUrl;
+      if (!useSteamImg) f.coverUrl = sel.coverUrl;
+    }
     if (sel.ttb) f.ttb = sel.ttb;
   }
 
-  function useSteamCover() {
-    if (f.steamAppId) f.coverUrl = `https://cdn.cloudflare.steamstatic.com/steam/apps/${f.steamAppId}/header.jpg`;
+  function handleSteamSelect(result: { steamAppId: number; title: string; coverUrl: string }) {
+    f.steamAppId = result.steamAppId;
+    useSteamImg = true;
+    f.coverUrl = result.coverUrl;
   }
 
   let uploadInput: HTMLInputElement;
@@ -46,7 +66,9 @@
       canvas.width = Math.round(img.width * scale);
       canvas.height = Math.round(img.height * scale);
       canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
-      f.coverUrl = canvas.toDataURL('image/jpeg', 0.8);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+      fallbackCover = dataUrl;
+      if (!useSteamImg) f.coverUrl = dataUrl;
     };
     img.src = URL.createObjectURL(file);
     (e.target as HTMLInputElement).value = '';
@@ -63,8 +85,6 @@
       <div class="mhdr-r">
         {#if !editing}
           <button class="btn-sm" on:click={() => editing = true}>edit</button>
-        {:else}
-          <button class="btn-sm" on:click={() => editing = false}>cancel</button>
         {/if}
         <button class="btn-close" on:click={onClose}>×</button>
       </div>
@@ -72,7 +92,7 @@
 
     <div class="modal-body">
       <div class="detail-art">
-        <CoverArt {game} showTitle={true} />
+        <CoverArt game={editing ? { ...game, coverUrl: f.coverUrl } : game} showTitle={true} />
       </div>
 
       {#if !editing}
@@ -104,12 +124,25 @@
           <label class="form-label">Cover Art</label>
           <RAWGSearch onSelect={handleRAWGSelect} />
           <div class="cover-actions">
-            {#if f.steamAppId}
-              <button class="btn-sm" on:click={useSteamCover}>use steam image</button>
-            {/if}
-            <button class="btn-sm" on:click={() => uploadInput.click()}>↑ upload image</button>
+            <button class="btn-sm" type="button" on:click={() => uploadInput.click()}>↑ upload image</button>
             <input bind:this={uploadInput} type="file" accept="image/*" style="display:none" on:change={handleUpload} />
           </div>
+          {#if f.steamAppId}
+            <div class="toggle-row" style="margin-top:8px">
+              <span class="toggle-label">Use Steam image</span>
+              <label class="toggle">
+                <input type="checkbox" checked={useSteamImg} on:change={e => toggleSteamImg(e.currentTarget.checked)} />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          {/if}
+        </div>
+        <div class="form-group">
+          <label class="form-label">Steam App ID</label>
+          <div class="steam-id-row">
+            <input class="form-input" type="number" min="1" step="1" placeholder="e.g. 1091500" bind:value={f.steamAppId} />
+          </div>
+          <SteamSearch onSelect={handleSteamSelect} />
         </div>
         <div class="form-group"><label class="form-label">Title</label><input class="form-input" bind:value={f.title} /></div>
         <div class="form-row">
@@ -124,7 +157,7 @@
         </div>
         <div class="form-row">
           <div class="form-group"><label class="form-label">TTB (h)</label><input class="form-input" type="number" step="0.5" bind:value={f.ttb} /></div>
-          <div class="form-group"><label class="form-label">Played (h)</label><input class="form-input" type="number" step="0.5" bind:value={f.hrsIn} /></div>
+          <div class="form-group"><label class="form-label">Played (h)</label><input class="form-input" type="number" step="0.1" bind:value={f.hrsIn} /></div>
         </div>
         <div class="form-group"><label class="form-label">Rating</label><Stars value={f.rating} onChange={v => f.rating = v} size={15} /></div>
         <div class="toggle-row" style="margin-bottom:12px">
@@ -152,4 +185,6 @@
   .prog-fill { height: 100%; }
   .notes { background: var(--s2); padding: 9px 11px; font-size: 11px; color: var(--t2); margin-bottom: 12px; line-height: 1.6; border-left: 2px solid var(--border2); }
   .cover-actions { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+  .steam-id-row { display: flex; gap: 6px; align-items: center; }
+  .steam-id-row .form-input { flex: 1; }
 </style>

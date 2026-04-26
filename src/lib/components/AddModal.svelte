@@ -94,7 +94,7 @@
         </div>
         <div class="form-group">
           <label class="form-label">Hours Played</label>
-          <input class="form-input" type="number" step="0.5" min="0" bind:value={f.hrsIn} placeholder="0" />
+          <input class="form-input" type="number" step="0.1" min="0" bind:value={f.hrsIn} placeholder="0" />
         </div>
       </div>
       <div class="form-group">
