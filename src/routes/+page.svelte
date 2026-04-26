@@ -388,8 +388,7 @@
     display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap;
     border-bottom: 1px solid var(--border);
   }
-  .logo-btn { background: none; border: none; padding: 0; cursor: pointer; transition: .2s; }
-  .logo-btn:hover .logo { opacity: 0.7; }
+  .logo-btn { background: none; border: none; padding: 0; cursor: pointer; }
   .logo { font-size: 26px; font-weight: 600; letter-spacing: -1px; line-height: 1; }
   .logo span { color: var(--accent); }
   .game-count { font-size: 11px; color: var(--t3); margin-top: 3px; margin-left: 2px; }
