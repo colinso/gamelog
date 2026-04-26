@@ -343,9 +343,9 @@
           <button type="button" class="search-clear" on:click={() => search = ''} title="Clear search">×</button>
         {/if}
       </div>
-      <a href="/stats" class="btn-util">↗ stats</a>
-      <button class="btn-util" on:click={() => showSettings = true}>⚙ settings</button>
+      <a href="/stats" class="btn-util btn-stats" title="Stats">▃▆█</a>
       <button class="btn-add" on:click={() => showAdd = true}>+ new game</button>
+      <button class="btn-gear" on:click={() => showSettings = true} title="Settings">⚙</button>
     </div>
   </header>
 
@@ -533,8 +533,15 @@
   .btn-util {
     background: var(--s2); border: 1px solid var(--border2); color: var(--t2);
     padding: 6px 10px; font-family: var(--mono); font-size: 11px; cursor: pointer; transition: .15s;
+    text-decoration: none; display: inline-flex; align-items: center;
   }
   .btn-util:hover { color: var(--text); }
+  .btn-stats { letter-spacing: 1px; }
+  .btn-gear {
+    background: transparent; border: none; color: var(--t2);
+    font-size: 20px; cursor: pointer; transition: .15s; padding: 0 2px; line-height: 1;
+  }
+  .btn-gear:hover { color: var(--text); }
   .btn-add {
     background: var(--accent); color: #111;
     padding: 8px 16px; font-family: var(--mono);

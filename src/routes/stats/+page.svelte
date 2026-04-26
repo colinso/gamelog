@@ -17,6 +17,10 @@
   $: inProgress = games.filter(g => g.status === 'inProgress');
   $: hoursLeftPlaying = inProgress.reduce((sum, g) => sum + (g.hrsLeft ?? 0), 0);
 
+  // Hours left across full backlog (everything not beaten or abandoned)
+  $: backlog = games.filter(g => g.status !== 'beat' && g.status !== 'abandoned');
+  $: hoursLeftBacklog = backlog.reduce((sum, g) => sum + (g.hrsLeft ?? 0), 0);
+
   // Beat rate
   $: beaten = games.filter(g => g.status === 'beat').length;
   $: abandoned = games.filter(g => g.status === 'abandoned').length;
@@ -62,6 +66,12 @@
         <div class="stat-label">hours left playing</div>
         <div class="stat-big">{fmt(hoursLeftPlaying)}h</div>
         <div class="stat-sub">across {inProgress.length} game{inProgress.length === 1 ? '' : 's'} in progress</div>
+      </div>
+
+      <div class="stat-card secondary">
+        <div class="stat-label">hours left in backlog</div>
+        <div class="stat-mid">{fmt(hoursLeftBacklog)}h</div>
+        <div class="stat-sub">{backlog.length} games not yet beaten or abandoned</div>
       </div>
 
       <div class="stat-row">
@@ -185,6 +195,14 @@
     padding: 18px 20px;
   }
   .stat-card.accent { border-color: var(--accent); }
+  .stat-card.secondary { background: transparent; }
+  .stat-mid {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--t2);
+    line-height: 1;
+    margin-bottom: 6px;
+  }
 
   .stat-row {
     display: grid;
@@ -239,7 +257,7 @@
   .rating-col { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; height: 100%; }
   .rating-bar-wrap { flex: 1; width: 100%; display: flex; align-items: flex-end; background: var(--s3); }
   .rating-bar-fill { width: 100%; background: var(--accent); transition: height .4s; min-height: 2px; }
-  .rating-label { font-size: 8px; color: var(--t3); letter-spacing: -1px; }
+  .rating-label { font-size: 8px; color: #facc15; letter-spacing: -1px; }
   .rating-count { font-size: 9px; color: var(--t2); }
 
   .avg-label { font-size: 9px; color: var(--t3); font-weight: 400; letter-spacing: 0; text-transform: none; }
