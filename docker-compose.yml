@@ -5,8 +5,6 @@ services:
     build: .
     container_name: gamelog
     restart: unless-stopped
-    ports:
-      - "3000:3000"
     environment:
       - NODE_ENV=production
       - PORT=3000
@@ -19,8 +17,13 @@ services:
     volumes:
       - ./data:/app/data
     networks:
-      - gamelog-network
+      - traefik_net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.gamelog.rule=Host(`gamelog.home`)"
+      - "traefik.http.routers.gamelog.entrypoints=web"
+      - "traefik.http.services.gamelog.loadbalancer.server.port=3000"
 
 networks:
-  gamelog-network:
-    driver: bridge
+  traefik_net:
+    external: true

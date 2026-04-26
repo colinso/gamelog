@@ -13,6 +13,7 @@ export interface Game {
   coverUrl: string | null;
   notes?: string;
   steamAppId?: number;
+  hidden?: boolean;
 }
 
 export interface StatusGroup {

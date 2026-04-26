@@ -64,6 +64,7 @@ function dbToGame(row: DbGame): Game {
     notes: row.notes || undefined,
     coverUrl: row.cover_url,
     steamAppId: row.steam_app_id || undefined,
+    hidden: Boolean(row.hidden),
   };
 }
 
@@ -80,6 +81,7 @@ function gameToDb(game: Partial<Game>): Partial<DbGame> {
     notes: game.notes || null,
     cover_url: game.coverUrl || null,
     steam_app_id: game.steamAppId || null,
+    hidden: game.hidden ? 1 : 0,
   };
 }
 
@@ -131,7 +133,8 @@ export function updateGame(id: number, updates: Partial<Game>): Game | null {
       coop = @coop,
       notes = @notes,
       cover_url = @cover_url,
-      steam_app_id = @steam_app_id
+      steam_app_id = @steam_app_id,
+      hidden = @hidden
     WHERE id = @id
   `);
   stmt.run({ ...dbGame, id });
@@ -161,8 +164,8 @@ export function deleteAllGames(): number {
 export function bulkInsertGames(games: Omit<Game, 'id'>[]): number {
   const database = getDb();
   const stmt = database.prepare(`
-    INSERT INTO games (title, platform, status, hrs_in, ttb, hrs_left, rating, coop, notes, cover_url, steam_app_id)
-    VALUES (@title, @platform, @status, @hrs_in, @ttb, @hrs_left, @rating, @coop, @notes, @cover_url, @steam_app_id)
+    INSERT INTO games (title, platform, status, hrs_in, ttb, hrs_left, rating, coop, notes, cover_url, steam_app_id, hidden)
+    VALUES (@title, @platform, @status, @hrs_in, @ttb, @hrs_left, @rating, @coop, @notes, @cover_url, @steam_app_id, @hidden)
   `);
 
   const insertMany = database.transaction((games: Omit<Game, 'id'>[]) => {
