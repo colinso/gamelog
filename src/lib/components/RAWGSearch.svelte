@@ -92,28 +92,28 @@
         <div class="hltb-multi-label">Multiple matches — pick one:</div>
         <div class="hltb-multi">
           {#each hltbResults.slice(0, 4) as h}
-            <button class="hltb-game-btn" on:click={() => pickHltbGame(h)}>{h.name}</button>
+            <button type="button" class="hltb-game-btn" on:click={() => pickHltbGame(h)}>{h.name}</button>
           {/each}
         </div>
       {:else if hltbResults.length === 1}
         <div class="ttb-row">
-          <button class="ttb-chip" class:active={ttbSource === 'main'} on:click={() => pickTtb('main', hltbResults[0].mainStory)}>
+          <button type="button" class="ttb-chip" class:active={ttbSource === 'main'} on:click={() => pickTtb('main', hltbResults[0].mainStory)}>
             main {hltbResults[0].mainStory}h
           </button>
           {#if hltbResults[0].mainExtra > 0}
-            <button class="ttb-chip" class:active={ttbSource === 'extra'} on:click={() => pickTtb('extra', hltbResults[0].mainExtra)}>
+            <button type="button" class="ttb-chip" class:active={ttbSource === 'extra'} on:click={() => pickTtb('extra', hltbResults[0].mainExtra)}>
               +extras {hltbResults[0].mainExtra}h
             </button>
           {/if}
           {#if hltbResults[0].completionist > 0}
-            <button class="ttb-chip" class:active={ttbSource === 'completionist'} on:click={() => pickTtb('completionist', hltbResults[0].completionist)}>
+            <button type="button" class="ttb-chip" class:active={ttbSource === 'completionist'} on:click={() => pickTtb('completionist', hltbResults[0].completionist)}>
               100% {hltbResults[0].completionist}h
             </button>
           {/if}
         </div>
       {/if}
     </div>
-    <button class="clear" on:click={clear}>×</button>
+    <button type="button" class="clear" on:click={clear}>×</button>
   </div>
 {:else}
   <div class="wrap">
