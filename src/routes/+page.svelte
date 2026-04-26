@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { browser } from '$app/environment';
   import { games, isSteamCover } from '../lib/stores';
-  import type { SteamGame, EpicGame } from '../lib/stores';
+  import type { SteamGame, EpicGame, SwitchGame } from '../lib/stores';
   import { STATUS_GROUPS, STATUS_MAP } from '../lib/constants';
   import { fmt } from '../lib/utils';
   import type { Game, Status } from '../lib/types';
@@ -22,6 +22,8 @@
   let ttbProgress: { done: number; total: number } | null = null;
   let steamSyncing = false;
   let epicSyncing = false;
+  let switchSyncing = false;
+  let switchConfigured = false;
   let showHidden = false;
   let draggingGame: Game | null = null;
   let dropTarget: Status | null = null;
@@ -192,6 +194,30 @@
     localStorage.setItem('ttb_last_fetch', new Date().toISOString());
   }
 
+  async function syncSwitch() {
+    console.info('[switch-sync] Starting sync');
+    switchSyncing = true;
+    try {
+      const res = await fetch('/api/switch');
+      if (res.status === 503) return; // not configured — silent no-op
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        console.error('[switch-sync] Server error', body);
+        alert(body?.error ?? `Switch sync failed (${res.status})`);
+        return;
+      }
+      const switchGames: SwitchGame[] = await res.json();
+      if (!Array.isArray(switchGames)) return;
+      await games.switchSync(switchGames);
+      localStorage.setItem('switch_last_sync', new Date().toISOString());
+      console.info('[switch-sync] Completed', { count: switchGames.length });
+    } catch (err) {
+      console.warn('[switch-sync] Network error', err);
+    } finally {
+      switchSyncing = false;
+    }
+  }
+
   // Lightweight sync: only recently played — runs on every load when full sync is fresh
   async function syncRecentSteam() {
     console.info('[steam-recent] Syncing recently played games');
@@ -357,9 +383,6 @@
       // Always load all games so hidden games appear in search
       await games.load(true);
 
-      // Auto-sync Steam on every load:
-      // - Full sync (owned + recently played) if >1hr stale
-      // - Lightweight recently-played sync otherwise (keeps hours current)
       const DAY = 24 * 60 * 60 * 1000;
       const HOUR = 60 * 60 * 1000;
       const isStale = (key: string, ttl: number) => {
@@ -367,6 +390,9 @@
         return !s || Date.now() - new Date(s).getTime() > ttl;
       };
 
+      // Auto-sync Steam on every load:
+      // - Full sync (owned + recently played) if >1hr stale
+      // - Lightweight recently-played sync otherwise (keeps hours current)
       if (isStale('steam_last_sync', HOUR)) {
         await syncSteam();
       } else {
@@ -375,6 +401,17 @@
 
       if (isStale('epic_last_sync', DAY)) {
         await syncEpic(cancelled);
+      }
+
+      // Check if Switch sync is configured (503 = not configured)
+      const switchCheckRes = await fetch('/api/switch');
+      switchConfigured = switchCheckRes.status !== 503;
+      if (switchConfigured && switchCheckRes.ok && isStale('switch_last_sync', DAY)) {
+        const switchGames: SwitchGame[] = await switchCheckRes.json().catch(() => []);
+        if (Array.isArray(switchGames)) {
+          await games.switchSync(switchGames);
+          localStorage.setItem('switch_last_sync', new Date().toISOString());
+        }
       }
 
       if (isStale('ttb_last_fetch', DAY)) {
@@ -433,6 +470,11 @@
     <div class="fetch-bar">
       <div class="fetch-track"><div class="fetch-fill" style="width:100%;opacity:0.5;animation:pulse 1s infinite alternate"></div></div>
       <span>syncing epic library…</span>
+    </div>
+  {:else if switchSyncing}
+    <div class="fetch-bar">
+      <div class="fetch-track"><div class="fetch-fill" style="width:100%;opacity:0.5;animation:pulse 1s infinite alternate"></div></div>
+      <span>syncing switch library…</span>
     </div>
   {:else if fetchProgress}
     <div class="fetch-bar">
@@ -540,6 +582,9 @@
     {steamSyncing}
     onEpicSync={syncEpic}
     {epicSyncing}
+    onSwitchSync={syncSwitch}
+    {switchSyncing}
+    {switchConfigured}
     {showHidden}
     onToggleHidden={toggleHidden}
   />

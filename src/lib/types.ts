@@ -14,6 +14,7 @@ export interface Game {
   notes?: string;
   steamAppId?: number;
   epicAppName?: string;
+  switchAppId?: string;
   hidden?: boolean;
 }
 

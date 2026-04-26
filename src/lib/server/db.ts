@@ -26,6 +26,7 @@ export function getDb(): Database.Database {
 
     // Additive migrations must run before schema so indexes on new columns don't fail
     try { db.exec('ALTER TABLE games ADD COLUMN epic_app_name TEXT'); } catch { /* already exists */ }
+    try { db.exec('ALTER TABLE games ADD COLUMN switch_app_id TEXT'); } catch { /* already exists */ }
 
     // Run schema (CREATE TABLE IF NOT EXISTS + indexes)
     const schema = readFileSync(join(__dirname, 'schema.sql'), 'utf-8');
@@ -49,6 +50,7 @@ type DbGame = {
   cover_url: string | null;
   steam_app_id: number | null;
   epic_app_name: string | null;
+  switch_app_id: string | null;
   hidden: number;
   created_at: string;
   updated_at: string;
@@ -69,6 +71,7 @@ function dbToGame(row: DbGame): Game {
     coverUrl: row.cover_url,
     steamAppId: row.steam_app_id || undefined,
     epicAppName: row.epic_app_name || undefined,
+    switchAppId: row.switch_app_id || undefined,
     hidden: Boolean(row.hidden),
   };
 }
@@ -87,6 +90,7 @@ function gameToDb(game: Partial<Game>): Partial<DbGame> {
     cover_url: game.coverUrl || null,
     steam_app_id: game.steamAppId || null,
     epic_app_name: game.epicAppName || null,
+    switch_app_id: game.switchAppId || null,
     hidden: game.hidden ? 1 : 0,
   };
 }
@@ -112,8 +116,8 @@ export function createGame(game: Omit<Game, 'id'>): Game {
   const database = getDb();
   const dbGame = gameToDb(game);
   const stmt = database.prepare(`
-    INSERT INTO games (title, platform, status, hrs_in, ttb, hrs_left, rating, coop, notes, cover_url, steam_app_id, epic_app_name)
-    VALUES (@title, @platform, @status, @hrs_in, @ttb, @hrs_left, @rating, @coop, @notes, @cover_url, @steam_app_id, @epic_app_name)
+    INSERT INTO games (title, platform, status, hrs_in, ttb, hrs_left, rating, coop, notes, cover_url, steam_app_id, epic_app_name, switch_app_id)
+    VALUES (@title, @platform, @status, @hrs_in, @ttb, @hrs_left, @rating, @coop, @notes, @cover_url, @steam_app_id, @epic_app_name, @switch_app_id)
   `);
   const info = stmt.run(dbGame);
   return { ...game, id: Number(info.lastInsertRowid) };
@@ -142,7 +146,8 @@ export function updateGame(id: number, updates: Partial<Game>): Game | null {
       notes = @notes,
       cover_url = @cover_url,
       steam_app_id = @steam_app_id,
-      epic_app_name = @epic_app_name
+      epic_app_name = @epic_app_name,
+      switch_app_id = @switch_app_id
     WHERE id = @id
   `);
   stmt.run({ ...dbGame, id });
@@ -181,8 +186,8 @@ export function bulkInsertGames(games: Omit<Game, 'id'>[]): number {
   if (toInsert.length === 0) return 0;
 
   const stmt = database.prepare(`
-    INSERT INTO games (title, platform, status, hrs_in, ttb, hrs_left, rating, coop, notes, cover_url, steam_app_id, epic_app_name, hidden)
-    VALUES (@title, @platform, @status, @hrs_in, @ttb, @hrs_left, @rating, @coop, @notes, @cover_url, @steam_app_id, @epic_app_name, @hidden)
+    INSERT INTO games (title, platform, status, hrs_in, ttb, hrs_left, rating, coop, notes, cover_url, steam_app_id, epic_app_name, switch_app_id, hidden)
+    VALUES (@title, @platform, @status, @hrs_in, @ttb, @hrs_left, @rating, @coop, @notes, @cover_url, @steam_app_id, @epic_app_name, @switch_app_id, @hidden)
   `);
 
   const insertMany = database.transaction((games: Omit<Game, 'id'>[]) => {

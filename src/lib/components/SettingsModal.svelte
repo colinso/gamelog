@@ -9,6 +9,9 @@
   export let steamSyncing: boolean;
   export let onEpicSync: () => void;
   export let epicSyncing: boolean;
+  export let onSwitchSync: () => void;
+  export let switchSyncing: boolean;
+  export let switchConfigured: boolean;
   export let showHidden: boolean;
   export let onToggleHidden: (show: boolean) => void;
 
@@ -178,6 +181,21 @@ cat ~/.config/legendary/user.json</pre>
             disabled={epicConnecting || !epicPaste.trim()}
           >{epicConnecting ? 'importing…' : 'import credentials'}</button>
           {#if epicError}<p class="epic-error">{epicError}</p>{/if}
+        {/if}
+      </div>
+
+      <div class="setting-section">
+        <div class="setting-label">Nintendo Switch</div>
+        {#if switchConfigured}
+          <div class="sync-row">
+            <button class="btn-secondary" on:click={onSwitchSync} disabled={switchSyncing}>
+              {switchSyncing ? 'syncing…' : '⟳ sync switch library'}
+            </button>
+          </div>
+        {:else}
+          <p class="epic-instructions">
+            Set <code>SWITCH_SESSION_TOKEN</code> and <code>SWITCH_DEVICE_ID</code> in your environment to enable Switch sync.
+          </p>
         {/if}
       </div>
 

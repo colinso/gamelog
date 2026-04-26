@@ -17,6 +17,14 @@ export type EpicGame = {
   status: Status;
 };
 
+export type SwitchGame = {
+  switchAppId: string;
+  title: string;
+  hrsIn: number;
+  coverUrl: string | null;
+  status: Status;
+};
+
 export { isSteamCover };
 
 function createGamesStore() {
@@ -233,6 +241,69 @@ function createGamesStore() {
             coop: false,
             coverUrl: null,
             epicAppName: eg.epicAppName,
+          });
+        }
+      }
+
+      for (const game of updates) {
+        await fetch('/api/games', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(game),
+        });
+      }
+
+      if (creates.length > 0) {
+        await fetch('/api/games', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(creates),
+        });
+      }
+
+      await this.load();
+    },
+
+    // Nintendo Switch sync: merge Switch games with existing library
+    async switchSync(switchGames: SwitchGame[]) {
+      const res = await fetch('/api/games?includeHidden=true');
+      if (!res.ok) {
+        console.error('[switch-sync] Failed to fetch library, aborting');
+        return;
+      }
+      const allGames: Game[] = await res.json();
+
+      const updates: Game[] = [];
+      const creates: Omit<Game, 'id'>[] = [];
+
+      for (const sg of switchGames) {
+        const byAppId = allGames.find(g => g.switchAppId === sg.switchAppId);
+        const byTitle = allGames.find(g => g.title.toLowerCase() === sg.title.toLowerCase());
+        const existing = byAppId ?? byTitle;
+
+        if (existing?.hidden) continue;
+
+        if (existing) {
+          const hrsIn = Math.max(sg.hrsIn, existing.hrsIn ?? 0);
+          updates.push({
+            ...existing,
+            switchAppId: sg.switchAppId,
+            hrsIn,
+            hrsLeft: Math.max(0, (existing.ttb || 0) - hrsIn),
+            coverUrl: existing.coverUrl ?? sg.coverUrl,
+          });
+        } else {
+          creates.push({
+            title: sg.title,
+            platform: 'Switch',
+            status: sg.status,
+            hrsIn: sg.hrsIn,
+            ttb: 0,
+            hrsLeft: 0,
+            rating: null,
+            coop: false,
+            coverUrl: sg.coverUrl,
+            switchAppId: sg.switchAppId,
           });
         }
       }
