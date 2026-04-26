@@ -15,7 +15,7 @@
       width={size} height={size} viewBox="0 0 24 24"
       class:full={filled}
       style="cursor: {onChange ? 'pointer' : 'default'}; flex-shrink: 0"
-      on:click={() => onChange && onChange(active === t ? null : t)}
+      on:click={() => onChange && onChange(value === t ? null : t)}
       on:mouseenter={() => onChange && (hover = t)}
       on:mouseleave={() => onChange && (hover = null)}
     >

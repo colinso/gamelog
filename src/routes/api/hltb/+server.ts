@@ -26,7 +26,7 @@ async function igdb(endpoint: string, body: string, token: string) {
       'Authorization': `Bearer ${token}`,
       'Accept': 'application/json',
     },
-    body
+    body,
   });
   if (!res.ok) throw new Error(`IGDB ${endpoint} returned ${res.status}`);
   return res.json();
