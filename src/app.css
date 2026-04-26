@@ -113,8 +113,9 @@
 .theme-gameboy .dstat-val      { font-size: 18px !important; }
 
 
-body {
+html, body {
   margin: 0;
+  background-color: #111;
 }
 
 ::-webkit-scrollbar { width: 4px; }
