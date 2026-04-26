@@ -7,6 +7,8 @@
   export let onImport: (games: Game[], merge: boolean) => void;
   export let onSteamSync: () => void;
   export let steamSyncing: boolean;
+  export let showHidden: boolean;
+  export let onToggleHidden: (show: boolean) => void;
 
   $: lastSync = (() => {
     if (typeof localStorage === 'undefined') return null;
@@ -96,6 +98,13 @@
 
       <div class="setting-section">
         <div class="setting-label">Library</div>
+        <div class="toggle-row" style="margin-bottom:12px">
+          <span class="toggle-label">Show hidden games</span>
+          <label class="toggle">
+            <input type="checkbox" checked={showHidden} on:change={e => onToggleHidden(e.currentTarget.checked)} />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
         <div class="btn-row">
           <button class="btn-secondary" on:click={exportLibrary}>↓ export JSON</button>
           <button class="btn-secondary" on:click={() => importInput.click()}>↑ import JSON</button>
@@ -127,4 +136,19 @@
   .btn-secondary { flex: 1; }
   .sync-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .sync-meta { font-size: 9px; color: var(--t3); }
+
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; }
+  .toggle-label { font-size: 11px; color: var(--text); font-family: var(--mono); }
+  .toggle { position: relative; display: inline-block; width: 36px; height: 18px; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider {
+    position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+    background-color: var(--s3); transition: .2s; border: 1px solid var(--border2);
+  }
+  .toggle-slider:before {
+    position: absolute; content: ""; height: 10px; width: 10px; left: 3px; bottom: 3px;
+    background-color: var(--text); transition: .2s;
+  }
+  input:checked + .toggle-slider { background-color: var(--accent); border-color: var(--accent); }
+  input:checked + .toggle-slider:before { transform: translateX(18px); background-color: #111; }
 </style>

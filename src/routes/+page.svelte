@@ -19,6 +19,7 @@
   let fetchProgress: { done: number; total: number } | null = null;
   let ttbProgress: { done: number; total: number } | null = null;
   let steamSyncing = false;
+  let showHidden = false;
 
   $: counts = $games.reduce((c, g) => { c[g.status] = (c[g.status] ?? 0) + 1; return c; }, {} as Record<string, number>);
 
@@ -129,6 +130,11 @@
     ttbProgress = null;
   }
 
+  async function toggleHidden(show: boolean) {
+    showHidden = show;
+    await games.load(showHidden);
+  }
+
   onMount(() => {
     let dead = false;
     const cancelled = () => dead;
@@ -152,7 +158,7 @@
       }
 
       // Load games from API
-      await games.load();
+      await games.load(showHidden);
 
       // Auto-sync Steam if it's been more than an hour
       const lastSync = localStorage.getItem('steam_last_sync');
@@ -254,6 +260,8 @@
     onImport={(imported, merge) => games.import(imported, merge)}
     onSteamSync={syncSteam}
     {steamSyncing}
+    {showHidden}
+    onToggleHidden={toggleHidden}
   />
 {/if}
 
@@ -266,6 +274,7 @@
     game={detail}
     onClose={() => detail = null}
     onUpdate={async g => { await games.updateGame(g); detail = g; }}
+    onHide={async id => { await games.hide(id); detail = null; }}
     onDelete={async id => { await games.delete(id); detail = null; }}
   />
 {/if}

@@ -6,14 +6,16 @@ import {
   createGame,
   updateGame,
   deleteGame,
-  bulkInsertGames
+  bulkInsertGames,
+  hideGame
 } from '$lib/server/db';
 import type { Game } from '$lib/types';
 
-// GET /api/games - Get all games
-export const GET: RequestHandler = async () => {
+// GET /api/games?includeHidden=true - Get all games
+export const GET: RequestHandler = async ({ url }) => {
   try {
-    const games = getAllGames();
+    const includeHidden = url.searchParams.get('includeHidden') === 'true';
+    const games = getAllGames(includeHidden);
     return json(games);
   } catch (err) {
     console.error('[games] Failed to fetch games:', err);
@@ -56,6 +58,24 @@ export const PATCH: RequestHandler = async ({ request }) => {
     if (err.status) throw err;
     console.error('[games] Failed to update game:', err);
     throw error(400, 'Invalid update data');
+  }
+};
+
+// PUT /api/games/hide - Hide a game (keep in DB but exclude from view)
+export const PUT: RequestHandler = async ({ request }) => {
+  try {
+    const { id } = await request.json();
+
+    if (!id) throw error(400, 'Missing game ID');
+
+    const hidden = hideGame(id);
+    if (!hidden) throw error(404, 'Game not found');
+
+    return json({ success: true });
+  } catch (err: any) {
+    if (err.status) throw err;
+    console.error('[games] Failed to hide game:', err);
+    throw error(400, 'Invalid request');
   }
 };
 

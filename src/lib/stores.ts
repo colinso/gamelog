@@ -21,8 +21,9 @@ function createGamesStore() {
     set,
 
     // Load games from API
-    async load() {
-      const res = await fetch('/api/games');
+    async load(includeHidden = false) {
+      const url = includeHidden ? '/api/games?includeHidden=true' : '/api/games';
+      const res = await fetch(url);
       if (res.ok) {
         const games = await res.json();
         set(games);
@@ -53,6 +54,18 @@ function createGamesStore() {
       if (res.ok) {
         const updated = await res.json();
         update(gs => gs.map(g => g.id === updated.id ? updated : g));
+      }
+    },
+
+    // Hide a game (keep in DB but exclude from view)
+    async hide(id: number) {
+      const res = await fetch('/api/games', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+      if (res.ok) {
+        update(gs => gs.filter(g => g.id !== id));
       }
     },
 
@@ -100,20 +113,24 @@ function createGamesStore() {
 
     // Steam sync: merge Steam games with existing library
     async steamSync(steamGames: SteamGame[]) {
-      let currentGames: Game[] = [];
-      update(gs => {
-        currentGames = gs;
-        return gs;
-      });
+      // Fetch ALL games including hidden to check if game should be skipped
+      const res = await fetch('/api/games?includeHidden=true');
+      const allGames: Game[] = res.ok ? await res.json() : [];
 
       const updates: Game[] = [];
       const creates: Omit<Game, 'id'>[] = [];
 
       for (const sg of steamGames) {
-        const existing = currentGames.find(g =>
+        const existing = allGames.find(g =>
           (g.steamAppId && g.steamAppId === sg.steamAppId) ||
           g.title.toLowerCase() === sg.title.toLowerCase()
         );
+
+        // Skip hidden games (don't re-import or update)
+        if (existing && (existing as any).hidden) {
+          console.info('[steam-sync] Skipping hidden game:', existing.title);
+          continue;
+        }
 
         if (existing) {
           // Update existing game

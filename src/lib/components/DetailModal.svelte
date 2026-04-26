@@ -10,6 +10,7 @@
   export let game: Game;
   export let onClose: () => void;
   export let onUpdate: (game: Game) => void;
+  export let onHide: (id: number) => void;
   export let onDelete: (id: number) => void;
 
   let editing = false;
@@ -95,7 +96,8 @@
           <div class="notes">{game.notes}</div>
         {/if}
         <div class="btn-row">
-          <button class="btn-danger" on:click={() => { onDelete(game.id); onClose(); }}>remove</button>
+          <button class="btn-secondary" on:click={() => { onHide(game.id); onClose(); }}>hide from library</button>
+          <button class="btn-danger" on:click={() => { onDelete(game.id); onClose(); }}>delete</button>
         </div>
       {:else}
         <div class="form-group">
