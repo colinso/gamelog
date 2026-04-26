@@ -318,7 +318,13 @@
       <SectionHead label="Playing" color="#a3e635" count={nowPlaying.length} />
       <div class="np-grid">
         {#each nowPlaying as g (g.id)}
-          <NowPlayingCard game={g} onClick={() => detail = g} onLongPress={handleLongPress} />
+          <NowPlayingCard
+            game={g}
+            onClick={() => detail = g}
+            onLongPress={handleLongPress}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+          />
         {/each}
       </div>
     </section>

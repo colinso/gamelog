@@ -5,6 +5,25 @@
   export let game: Game;
   export let onClick: () => void;
   export let onLongPress: ((game: Game) => void) | undefined = undefined;
+  export let onDragStart: ((game: Game) => void) | undefined = undefined;
+  export let onDragEnd: (() => void) | undefined = undefined;
+
+  let isDragging = false;
+
+  function handleDragStart(e: DragEvent) {
+    if (!onDragStart) return;
+    isDragging = true;
+    onDragStart(game);
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', game.id.toString());
+    }
+  }
+
+  function handleDragEnd() {
+    isDragging = false;
+    if (onDragEnd) onDragEnd();
+  }
 
   $: [c1, c2] = gameColor(game.title);
   $: prog = pct(game.hrsIn, game.ttb);
@@ -51,8 +70,12 @@
 
 <div
   class="np-card"
+  class:dragging={isDragging}
+  draggable={onDragStart !== undefined}
   on:click={handleClick}
   on:contextmenu={handleContextMenu}
+  on:dragstart={handleDragStart}
+  on:dragend={handleDragEnd}
   on:touchstart={handleTouchStart}
   on:touchend={handleTouchEnd}
   on:touchmove={handleTouchMove}
@@ -87,6 +110,10 @@
 </div>
 
 <style>
+  .np-card.dragging {
+    opacity: 0.5;
+    transform: scale(0.95);
+  }
   .np-card {
     background: var(--s1);
     border: 1px solid var(--border);
