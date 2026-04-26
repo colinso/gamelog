@@ -310,18 +310,28 @@
       // Auto-sync Steam on every load:
       // - Full sync (owned + recently played) if >1hr stale
       // - Lightweight recently-played sync otherwise (keeps hours current)
-      const lastSync = localStorage.getItem('steam_last_sync');
-      const stale = !lastSync || Date.now() - new Date(lastSync).getTime() > 60 * 60 * 1000;
-      if (stale) {
+      const DAY = 24 * 60 * 60 * 1000;
+      const HOUR = 60 * 60 * 1000;
+      const isStale = (key: string, ttl: number) => {
+        const s = localStorage.getItem(key);
+        return !s || Date.now() - new Date(s).getTime() > ttl;
+      };
+
+      if (isStale('steam_last_sync', HOUR)) {
         await syncSteam();
-        // After a full sync, fetch TTB for any games missing it (new imports, etc.)
-        await fetchMissingTtb(cancelled);
       } else {
         await syncRecentSteam();
-        // No TTB fetch here — recent sync only updates hours, not new game additions
       }
 
-      await fetchMissingCovers(cancelled);
+      if (isStale('ttb_last_fetch', DAY)) {
+        await fetchMissingTtb(cancelled);
+        localStorage.setItem('ttb_last_fetch', new Date().toISOString());
+      }
+
+      if (isStale('cover_last_fetch', DAY)) {
+        await fetchMissingCovers(cancelled);
+        localStorage.setItem('cover_last_fetch', new Date().toISOString());
+      }
     })();
     return () => { dead = true; };
   });
