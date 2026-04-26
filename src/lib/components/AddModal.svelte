@@ -7,7 +7,7 @@
   export let onClose: () => void;
   export let onAdd: (game: Omit<Game, 'id'>) => void;
 
-  let f = { title: '', platform: 'PC', status: 'notStarted' as Status, hrsIn: '', ttb: '', rating: null as number | null, coop: false, notes: '', coverUrl: null as string | null };
+  let f = { title: '', platform: 'PC', status: 'wishlist' as Status, hrsIn: '', ttb: '', rating: null as number | null, coop: false, notes: '', coverUrl: null as string | null };
   let showTitleOverride = false;
 
   function handleRAWGSelect(sel: { title: string; coverUrl: string | null; ttb: number }) {
@@ -73,19 +73,25 @@
           {/if}
         </div>
       {/if}
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Platform</label>
-          <select class="form-input form-select" bind:value={f.platform}>
-            {#each PLATFORMS as p}<option>{p}</option>{/each}
-          </select>
+      <div class="form-group">
+        <label class="form-label">Status</label>
+        <div class="status-pills">
+          {#each STATUS_GROUPS as sg}
+            <button
+              type="button"
+              class="status-pill"
+              class:active={f.status === sg.key}
+              style={f.status === sg.key ? `background:${sg.color};border-color:${sg.color};color:#111` : `border-color:${sg.color}33`}
+              on:click={() => f.status = sg.key}
+            >{sg.label}</button>
+          {/each}
         </div>
-        <div class="form-group">
-          <label class="form-label">Status</label>
-          <select class="form-input form-select" bind:value={f.status}>
-            {#each STATUS_GROUPS as sg}<option value={sg.key}>{sg.label}</option>{/each}
-          </select>
-        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Platform</label>
+        <select class="form-input form-select" bind:value={f.platform}>
+          {#each PLATFORMS as p}<option>{p}</option>{/each}
+        </select>
       </div>
       <div class="form-row">
         <div class="form-group">
@@ -116,4 +122,23 @@
 
 <style>
   @import '../modal.css';
+
+  .status-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .status-pill {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 5px 10px;
+    background: transparent;
+    border: 1px solid var(--border2);
+    color: var(--t2);
+    cursor: pointer;
+    transition: .15s;
+    white-space: nowrap;
+  }
+  .status-pill:hover { color: var(--text); border-color: var(--border2); background: var(--s2); }
+  .status-pill.active { color: #111; font-weight: 600; }
 </style>

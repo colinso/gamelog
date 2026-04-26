@@ -343,6 +343,7 @@
           <button type="button" class="search-clear" on:click={() => search = ''} title="Clear search">×</button>
         {/if}
       </div>
+      <a href="/stats" class="btn-util">↗ stats</a>
       <button class="btn-util" on:click={() => showSettings = true}>⚙ settings</button>
       <button class="btn-add" on:click={() => showAdd = true}>+ new game</button>
     </div>
