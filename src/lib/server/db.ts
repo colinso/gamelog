@@ -118,7 +118,9 @@ export function updateGame(id: number, updates: Partial<Game>): Game | null {
   const existing = getGameById(id);
   if (!existing) return null;
 
-  const merged = { ...existing, ...updates };
+  // Never let a PATCH override hidden — use hideGame() for that
+  const { hidden: _ignored, ...safeUpdates } = updates;
+  const merged = { ...existing, ...safeUpdates };
   const dbGame = gameToDb(merged);
 
   const stmt = database.prepare(`
@@ -133,8 +135,7 @@ export function updateGame(id: number, updates: Partial<Game>): Game | null {
       coop = @coop,
       notes = @notes,
       cover_url = @cover_url,
-      steam_app_id = @steam_app_id,
-      hidden = @hidden
+      steam_app_id = @steam_app_id
     WHERE id = @id
   `);
   stmt.run({ ...dbGame, id });
@@ -163,6 +164,15 @@ export function deleteAllGames(): number {
 
 export function bulkInsertGames(games: Omit<Game, 'id'>[]): number {
   const database = getDb();
+
+  // Never create a duplicate entry for a steamAppId that already exists (hidden or not)
+  const existingAppIds = new Set<number>(
+    (database.prepare('SELECT steam_app_id FROM games WHERE steam_app_id IS NOT NULL').all() as { steam_app_id: number }[])
+      .map(r => r.steam_app_id)
+  );
+  const toInsert = games.filter(g => !g.steamAppId || !existingAppIds.has(g.steamAppId));
+  if (toInsert.length === 0) return 0;
+
   const stmt = database.prepare(`
     INSERT INTO games (title, platform, status, hrs_in, ttb, hrs_left, rating, coop, notes, cover_url, steam_app_id, hidden)
     VALUES (@title, @platform, @status, @hrs_in, @ttb, @hrs_left, @rating, @coop, @notes, @cover_url, @steam_app_id, @hidden)
@@ -174,6 +184,6 @@ export function bulkInsertGames(games: Omit<Game, 'id'>[]): number {
     }
   });
 
-  insertMany(games);
-  return games.length;
+  insertMany(toInsert);
+  return toInsert.length;
 }

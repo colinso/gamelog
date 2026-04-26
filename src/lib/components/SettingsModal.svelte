@@ -25,9 +25,11 @@
     }
   }
 
-  function exportLibrary() {
+  async function exportLibrary() {
+    const res = await fetch('/api/games?includeHidden=true');
+    const allGames = res.ok ? await res.json() : games;
     const blob = new Blob(
-      [JSON.stringify({ version: 1, exported: new Date().toISOString(), games }, null, 2)],
+      [JSON.stringify({ version: 1, exported: new Date().toISOString(), games: allGames }, null, 2)],
       { type: 'application/json' }
     );
     const a = document.createElement('a');

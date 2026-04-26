@@ -120,20 +120,21 @@ function createGamesStore() {
     async steamSync(steamGames: SteamGame[]) {
       // Fetch ALL games including hidden to check if game should be skipped
       const res = await fetch('/api/games?includeHidden=true');
-      const allGames: Game[] = res.ok ? await res.json() : [];
+      if (!res.ok) {
+        console.error('[steam-sync] Failed to fetch library, aborting to avoid recreating hidden games');
+        return;
+      }
+      const allGames: Game[] = await res.json();
 
       const updates: Game[] = [];
       const creates: Omit<Game, 'id'>[] = [];
 
       for (const sg of steamGames) {
-        const existing = allGames.find(g =>
-          (g.steamAppId && g.steamAppId === sg.steamAppId) ||
-          g.title.toLowerCase() === sg.title.toLowerCase()
-        );
+        const byAppId = allGames.find(g => g.steamAppId != null && g.steamAppId === sg.steamAppId);
+        const byTitle = allGames.find(g => g.title.toLowerCase() === sg.title.toLowerCase());
+        const existing = byAppId ?? byTitle;
 
-        // Skip hidden games (don't re-import or update)
-        if (existing && (existing as any).hidden) {
-          console.info('[steam-sync] Skipping hidden game:', existing.title);
+        if (existing?.hidden) {
           continue;
         }
 
@@ -148,7 +149,6 @@ function createGamesStore() {
           };
           updates.push(updated);
         } else {
-          // Create new game
           creates.push({
             title: sg.title,
             platform: 'PC',
