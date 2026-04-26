@@ -55,23 +55,25 @@
 
   $: counts = $games.reduce((c, g) => { c[g.status] = (c[g.status] ?? 0) + 1; return c; }, {} as Record<string, number>);
 
+  const alpha = (games: Game[]) => [...games].sort((a, b) => a.title.localeCompare(b.title));
+
   $: filtered = $games.filter(g => {
     if (filter !== 'all' && g.status !== filter) return false;
     if (search.trim()) return g.title.toLowerCase().includes(search.toLowerCase());
     return true;
   });
 
-  $: nowPlaying = $games.filter(g => g.status === 'inProgress');
+  $: nowPlaying = alpha($games.filter(g => g.status === 'inProgress'));
   $: showNP = filter === 'all' && !search.trim() && nowPlaying.length > 0;
 
   $: grouped = (() => {
     if (filter !== 'all' || search.trim()) {
       const sg = STATUS_GROUPS.find(s => s.key === filter) ?? { label: 'Results', color: '#888', key: 'results' as any };
-      return [{ ...sg, games: filtered }];
+      return [{ ...sg, games: alpha(filtered) }];
     }
     return STATUS_GROUPS
       .filter(sg => sg.key !== 'inProgress')
-      .map(sg => ({ ...sg, games: $games.filter(g => g.status === sg.key) }))
+      .map(sg => ({ ...sg, games: alpha($games.filter(g => g.status === sg.key)) }))
       .filter(sg => sg.games.length > 0);
   })();
 

@@ -22,6 +22,7 @@
 
 ## Pending ⏳
 - [ ] Make status field more prominent in AddModal (user often forgets to set it)
+- [ ] Manual drag-to-reorder games within a section (currently alphabetized)
 
 ## Future Ideas 💡
 - Add keyboard shortcuts for status changes
