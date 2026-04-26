@@ -23,7 +23,34 @@
   let draggingGame: Game | null = null;
   let dropTarget: Status | null = null;
   let statusPickerGame: Game | null = null;
-  let expandedSections: Record<string, boolean> = {};
+
+  // Row-based pagination — always show full rows, no orphan cards
+  const PAGE_ROWS = 2;
+  let gridCols = 4; // updated by ResizeObserver on any card grid
+  let extraRows: Record<string, number> = {}; // extra rows shown beyond PAGE_ROWS
+
+  function gridObserver(node: HTMLElement) {
+    if (typeof ResizeObserver === 'undefined') return {};
+    const ro = new ResizeObserver(() => {
+      const cols = window.getComputedStyle(node).gridTemplateColumns.split(' ').length;
+      if (cols > 0) gridCols = cols;
+    });
+    ro.observe(node);
+    return { destroy: () => ro.disconnect() };
+  }
+
+  function visibleCount(key: string) {
+    return (PAGE_ROWS + (extraRows[key] ?? 0)) * gridCols;
+  }
+
+  function showMore(key: string) {
+    extraRows = { ...extraRows, [key]: (extraRows[key] ?? 0) + PAGE_ROWS };
+  }
+
+  function showLess(key: string) {
+    const { [key]: _, ...rest } = extraRows;
+    extraRows = rest;
+  }
 
   $: counts = $games.reduce((c, g) => { c[g.status] = (c[g.status] ?? 0) + 1; return c; }, {} as Record<string, number>);
 
@@ -229,7 +256,7 @@
       <button class="logo-btn" on:click={() => { filter = 'all'; search = ''; }} title="Go home">
         <div class="logo">gamelog</div>
       </button>
-      <div class="game-count">{$games.length} games in archive</div>
+      <div class="game-count">{$games.length} games</div>
     </div>
     <div class="header-right">
       <div class="search-wrap">
@@ -304,8 +331,8 @@
         {#if group.games.length === 0}
           <div class="empty">nothing here yet</div>
         {:else}
-          <div class="card-grid">
-            {#each (expandedSections[group.key] ? group.games : group.games.slice(0, 8)) as g (g.id)}
+          <div class="card-grid" use:gridObserver>
+            {#each group.games.slice(0, visibleCount(group.key)) as g (g.id)}
               <GameCard
                 game={g}
                 onClick={() => detail = g}
@@ -315,13 +342,12 @@
               />
             {/each}
           </div>
-          {#if group.games.length > 8 && !expandedSections[group.key]}
-            <button class="btn-show-more" on:click={() => expandedSections[group.key] = true}>
-              show {group.games.length - 8} more
+          {#if group.games.length > visibleCount(group.key)}
+            <button class="btn-show-more" on:click={() => showMore(group.key)}>
+              show {group.games.length - visibleCount(group.key)} more
             </button>
-          {/if}
-          {#if expandedSections[group.key] && group.games.length > 8}
-            <button class="btn-show-more" on:click={() => expandedSections[group.key] = false}>
+          {:else if (extraRows[group.key] ?? 0) > 0}
+            <button class="btn-show-more" on:click={() => showLess(group.key)}>
               show less
             </button>
           {/if}
@@ -390,7 +416,7 @@
   }
   .logo-btn { background: none; border: none; padding: 0; cursor: pointer; }
   .logo { font-size: 26px; font-weight: 600; letter-spacing: -1px; line-height: 1; color: var(--accent); }
-  .game-count { font-size: 11px; color: var(--t3); margin-top: 3px; margin-left: 2px; }
+  .game-count { font-size: 13px; color: var(--t2); margin-top: 8px; margin-left: 2px; }
   .header-right { margin-left: auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
   .search-wrap { position: relative; }
@@ -457,7 +483,7 @@
     outline-offset: 8px;
     background: rgba(163, 230, 53, 0.05);
   }
-  .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+  .card-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
   .empty { padding: 60px 0; text-align: center; color: var(--t3); font-size: 12px; }
   .btn-show-more {
     display: block;

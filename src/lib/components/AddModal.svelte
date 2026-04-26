@@ -108,7 +108,7 @@
           <span class="toggle-slider"></span>
         </label>
       </div>
-      <button type="submit" class="btn-primary">add to archive</button>
+      <button type="submit" class="btn-primary">add game</button>
     </form>
   </div>
 </div>
