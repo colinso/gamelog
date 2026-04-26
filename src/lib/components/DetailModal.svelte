@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { STATUS_MAP, PLATFORMS } from '../constants';
   import { fmt, pct, isSteamCover } from '../utils';
   import type { Game, Status } from '../types';
@@ -25,15 +26,49 @@
   $: sc = STATUS_MAP[game.status];
   $: prog = pct(game.hrsIn, game.ttb);
 
+  // Auto-fix stale cloudflare cover URLs (broken for newer games) on mount
+  function isStaleCloudflareUrl(url: string | null | undefined): boolean {
+    return Boolean(url?.includes('cdn.cloudflare.steamstatic.com') && url?.endsWith('/header.jpg'));
+  }
+
+  onMount(async () => {
+    if (useSteamImg && f.steamAppId && isStaleCloudflareUrl(f.coverUrl)) {
+      try {
+        const res = await fetch(`/api/steam/appdetails?appid=${f.steamAppId}`);
+        if (res.ok) {
+          const detail = await res.json();
+          if (detail.header_image) {
+            f.coverUrl = detail.header_image;
+            // Silently persist the fixed URL so it doesn't need to happen again
+            onUpdate({ ...f, hrsLeft: Math.max(0, (f.ttb || 0) - (f.hrsIn || 0)) });
+          }
+        }
+      } catch {
+        // Non-fatal — broken URL fallback (gradient) already handles display
+      }
+    }
+  });
+
   function save() {
     onUpdate({ ...f, hrsLeft: Math.max(0, (f.ttb || 0) - (f.hrsIn || 0)) });
     editing = false;
   }
 
-  function toggleSteamImg(checked: boolean) {
+  async function toggleSteamImg(checked: boolean) {
     useSteamImg = checked;
     if (checked && f.steamAppId) {
-      f.coverUrl = `https://cdn.cloudflare.steamstatic.com/steam/apps/${f.steamAppId}/header.jpg`;
+      // Fetch the canonical header_image URL from appdetails (handles Akamai CDN for newer games)
+      try {
+        const res = await fetch(`/api/steam/appdetails?appid=${f.steamAppId}`);
+        if (res.ok) {
+          const detail = await res.json();
+          f.coverUrl = detail.header_image ?? `https://cdn.cloudflare.steamstatic.com/steam/apps/${f.steamAppId}/header.jpg`;
+        } else {
+          f.coverUrl = `https://cdn.cloudflare.steamstatic.com/steam/apps/${f.steamAppId}/header.jpg`;
+        }
+      } catch {
+        f.coverUrl = `https://cdn.cloudflare.steamstatic.com/steam/apps/${f.steamAppId}/header.jpg`;
+      }
     } else {
       f.coverUrl = fallbackCover;
     }
