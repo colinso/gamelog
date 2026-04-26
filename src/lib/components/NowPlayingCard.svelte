@@ -28,6 +28,9 @@
   $: [c1, c2] = gameColor(game.title);
   $: prog = pct(game.hrsIn, game.ttb);
 
+  let imgError = false;
+  $: if (game.coverUrl) imgError = false;
+
   let longPressTimer: ReturnType<typeof setTimeout>;
   let longPressTriggered = false;
 
@@ -84,8 +87,8 @@
   on:keydown={e => e.key === 'Enter' && onClick()}
 >
   <div class="art">
-    {#if game.coverUrl}
-      <img src={game.coverUrl} alt={game.title} />
+    {#if game.coverUrl && !imgError}
+      <img src={game.coverUrl} alt={game.title} on:error={() => imgError = true} />
     {:else}
       <div class="grad" style="background: linear-gradient(150deg, {c1}, {c2})">
         <span class="initials">{initials(game.title)}</span>

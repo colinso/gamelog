@@ -6,11 +6,14 @@
   export let showTitle = false;
 
   $: [c1, c2] = gameColor(game.title);
+
+  let imgError = false;
+  $: if (game.coverUrl) imgError = false; // reset when URL changes
 </script>
 
-{#if game.coverUrl}
+{#if game.coverUrl && !imgError}
   <div class="cover-wrap">
-    <img src={game.coverUrl} alt={game.title} />
+    <img src={game.coverUrl} alt={game.title} on:error={() => imgError = true} />
     <div class="overlay"></div>
     {#if showTitle}<div class="cover-title">{game.title}</div>{/if}
   </div>
