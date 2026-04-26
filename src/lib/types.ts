@@ -1,4 +1,4 @@
-export type Status = 'inProgress' | 'onShelf' | 'playingNext' | 'notStarted' | 'wishlist' | 'beat' | 'abandoned';
+export type Status = 'inProgress' | 'inRotation' | 'onShelf' | 'playingNext' | 'notStarted' | 'wishlist' | 'beat' | 'abandoned';
 
 export interface Game {
   id: number;
