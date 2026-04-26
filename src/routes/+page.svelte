@@ -226,13 +226,18 @@
 <div class="page">
   <header>
     <div class="logo-wrap">
-      <div class="logo">game<span>log</span></div>
+      <button class="logo-btn" on:click={() => { filter = 'all'; search = ''; }} title="Go home">
+        <div class="logo">game<span>log</span></div>
+      </button>
       <div class="game-count">{$games.length} games in archive</div>
     </div>
     <div class="header-right">
       <div class="search-wrap">
         <span class="search-icon">⌕</span>
         <input class="search-input" bind:value={search} placeholder="search…" />
+        {#if search}
+          <button type="button" class="search-clear" on:click={() => search = ''} title="Clear search">×</button>
+        {/if}
       </div>
       <button class="btn-util" on:click={() => showSettings = true}>⚙ settings</button>
       <button class="btn-add" on:click={() => showAdd = true}>+ new game</button>
@@ -383,6 +388,8 @@
     display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap;
     border-bottom: 1px solid var(--border);
   }
+  .logo-btn { background: none; border: none; padding: 0; cursor: pointer; transition: .2s; }
+  .logo-btn:hover .logo { opacity: 0.7; }
   .logo { font-size: 26px; font-weight: 600; letter-spacing: -1px; line-height: 1; }
   .logo span { color: var(--accent); }
   .game-count { font-size: 11px; color: var(--t3); margin-top: 3px; margin-left: 2px; }
@@ -397,6 +404,12 @@
   }
   .search-input:focus { outline: none; border-color: var(--accent); width: 240px; }
   .search-input::placeholder { color: var(--t3); }
+  .search-clear {
+    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; color: var(--t3); font-size: 16px;
+    cursor: pointer; transition: .2s; padding: 4px;
+  }
+  .search-clear:hover { color: var(--text); }
 
   .btn-group { display: flex; gap: 6px; }
   .btn-util {
