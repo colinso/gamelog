@@ -13,6 +13,9 @@
 - [x] Theme-aware logo color
 - [x] Simplify header (game count, button labels)
 - [x] Fix RAWGSearch form submission bug
+- [x] Row-based pagination (always 2 full rows, 4-column grid)
+- [x] Fix Steam sync overwriting user-set statuses
+- [x] Drag-to-Playing section support
 
 ## In Progress 🔄
 - [ ] Steam Family Sharing & Recently Played

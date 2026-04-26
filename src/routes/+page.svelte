@@ -306,8 +306,15 @@
     {/each}
   </nav>
 
-  {#if showNP}
-    <section class="now-playing">
+  {#if showNP || dropTarget === 'inProgress'}
+    <section
+      class="now-playing"
+      class:drop-target={dropTarget === 'inProgress'}
+      on:dragover={e => handleDragOver(e, 'inProgress')}
+      on:dragleave={handleDragLeave}
+      on:drop={e => handleDrop(e, 'inProgress')}
+      role="region"
+    >
       <SectionHead label="Playing" color="#a3e635" count={nowPlaying.length} />
       <div class="np-grid">
         {#each nowPlaying as g (g.id)}
@@ -472,7 +479,12 @@
   .dot { display: inline-block; width: 5px; height: 5px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
   .badge { background: var(--s2); padding: 1px 5px; font-size: 9px; margin-left: 4px; color: var(--t2); border: 1px solid var(--border); }
 
-  .now-playing { padding: 32px 0 0; }
+  .now-playing { padding: 32px 0 0; transition: .2s; }
+  .now-playing.drop-target {
+    outline: 2px dashed #a3e635;
+    outline-offset: 8px;
+    background: rgba(163, 230, 53, 0.05);
+  }
   .np-grid { display: flex; gap: 12px; overflow-x: auto; scrollbar-width: none; padding-bottom: 4px; }
   .np-grid::-webkit-scrollbar { display: none; }
 
