@@ -164,5 +164,5 @@
   .bar-fill { height: 100%; transition: .3s; }
   .bottom { display: flex; align-items: center; justify-content: space-between; }
   .pct { font-size: 9px; font-weight: 600; letter-spacing: .3px; }
-  .hrs, .ttb { font-size: 9px; color: var(--t3); }
+  .hrs, .ttb { font-size: 9px; color: var(--text3); }
 </style>

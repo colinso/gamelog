@@ -8,9 +8,10 @@
   export let onAdd: (game: Omit<Game, 'id'>) => void;
 
   let f = { title: '', platform: 'PC', status: 'notStarted' as Status, hrsIn: '', ttb: '', rating: null as number | null, coop: false, notes: '', coverUrl: null as string | null };
+  let showTitleOverride = false;
 
   function handleRAWGSelect(sel: { title: string; coverUrl: string | null; ttb: number }) {
-    if (sel.title) f.title = sel.title;
+    f.title = sel.title;
     if (sel.coverUrl) f.coverUrl = sel.coverUrl;
     if (sel.ttb) f.ttb = String(sel.ttb);
   }
@@ -54,17 +55,24 @@
     </div>
     <form class="modal-body" on:submit={submit}>
       <div class="form-group">
-        <label class="form-label">Cover Art</label>
+        <label class="form-label">Search Game (title, cover, hours)</label>
         <RAWGSearch onSelect={handleRAWGSelect} />
         <div style="margin-top:6px">
-          <button type="button" class="btn-sm" on:click={() => uploadInput.click()}>↑ upload image</button>
+          <button type="button" class="btn-sm" on:click={() => uploadInput.click()}>↑ upload custom image</button>
           <input bind:this={uploadInput} type="file" accept="image/*" style="display:none" on:change={handleUpload} />
         </div>
       </div>
-      <div class="form-group">
-        <label class="form-label">Title</label>
-        <input class="form-input" bind:value={f.title} placeholder="Confirm or type manually…" />
-      </div>
+      {#if f.title}
+        <div class="form-group">
+          <label class="form-label">
+            <input type="checkbox" bind:checked={showTitleOverride} style="margin-right:6px" />
+            Override title
+          </label>
+          {#if showTitleOverride}
+            <input class="form-input" bind:value={f.title} placeholder="Enter title…" />
+          {/if}
+        </div>
+      {/if}
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">Platform</label>

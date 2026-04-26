@@ -23,6 +23,7 @@
   let draggingGame: Game | null = null;
   let dropTarget: Status | null = null;
   let statusPickerGame: Game | null = null;
+  let expandedSections: Record<string, boolean> = {};
 
   $: counts = $games.reduce((c, g) => { c[g.status] = (c[g.status] ?? 0) + 1; return c; }, {} as Record<string, number>);
 
@@ -299,7 +300,7 @@
           <div class="empty">nothing here yet</div>
         {:else}
           <div class="card-grid">
-            {#each group.games as g (g.id)}
+            {#each (expandedSections[group.key] ? group.games : group.games.slice(0, 8)) as g (g.id)}
               <GameCard
                 game={g}
                 onClick={() => detail = g}
@@ -309,6 +310,16 @@
               />
             {/each}
           </div>
+          {#if group.games.length > 8 && !expandedSections[group.key]}
+            <button class="btn-show-more" on:click={() => expandedSections[group.key] = true}>
+              show {group.games.length - 8} more
+            </button>
+          {/if}
+          {#if expandedSections[group.key] && group.games.length > 8}
+            <button class="btn-show-more" on:click={() => expandedSections[group.key] = false}>
+              show less
+            </button>
+          {/if}
         {/if}
       </section>
     {/each}
@@ -437,6 +448,21 @@
   }
   .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
   .empty { padding: 60px 0; text-align: center; color: var(--t3); font-size: 12px; }
+  .btn-show-more {
+    display: block;
+    margin: 16px auto 0;
+    padding: 10px 16px;
+    background: var(--s2);
+    border: 1px solid var(--border);
+    color: var(--t2);
+    font-size: 12px;
+    cursor: pointer;
+    transition: .2s;
+  }
+  .btn-show-more:hover {
+    background: var(--s3);
+    border-color: var(--border2);
+  }
 
   /* Status picker modal */
   .status-picker {
