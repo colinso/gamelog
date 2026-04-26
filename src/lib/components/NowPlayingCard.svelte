@@ -4,12 +4,62 @@
 
   export let game: Game;
   export let onClick: () => void;
+  export let onLongPress: ((game: Game) => void) | undefined = undefined;
 
   $: [c1, c2] = gameColor(game.title);
   $: prog = pct(game.hrsIn, game.ttb);
+
+  let longPressTimer: ReturnType<typeof setTimeout>;
+  let longPressTriggered = false;
+
+  function handleTouchStart(e: TouchEvent) {
+    if (!onLongPress) return;
+    longPressTriggered = false;
+    longPressTimer = setTimeout(() => {
+      longPressTriggered = true;
+      onLongPress(game);
+      if ('vibrate' in navigator) {
+        navigator.vibrate(50);
+      }
+    }, 500);
+  }
+
+  function handleTouchEnd() {
+    clearTimeout(longPressTimer);
+  }
+
+  function handleTouchMove() {
+    clearTimeout(longPressTimer);
+  }
+
+  function handleClick(e: MouseEvent) {
+    if (longPressTriggered) {
+      e.preventDefault();
+      e.stopPropagation();
+      longPressTriggered = false;
+      return;
+    }
+    onClick();
+  }
+
+  function handleContextMenu(e: MouseEvent) {
+    if (!onLongPress) return;
+    e.preventDefault();
+    onLongPress(game);
+  }
 </script>
 
-<div class="np-card" on:click={onClick} role="button" tabindex="0" on:keydown={e => e.key === 'Enter' && onClick()}>
+<div
+  class="np-card"
+  on:click={handleClick}
+  on:contextmenu={handleContextMenu}
+  on:touchstart={handleTouchStart}
+  on:touchend={handleTouchEnd}
+  on:touchmove={handleTouchMove}
+  role="button"
+  tabindex="0"
+  on:keydown={e => e.key === 'Enter' && onClick()}
+>
   <div class="art">
     {#if game.coverUrl}
       <img src={game.coverUrl} alt={game.title} />

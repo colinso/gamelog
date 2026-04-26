@@ -65,6 +65,12 @@
     }
     onClick();
   }
+
+  function handleContextMenu(e: MouseEvent) {
+    if (!onLongPress) return;
+    e.preventDefault(); // Prevent default context menu
+    onLongPress(game);
+  }
 </script>
 
 <div
@@ -72,6 +78,7 @@
   class:dragging={isDragging}
   draggable={onDragStart !== undefined}
   on:click={handleClick}
+  on:contextmenu={handleContextMenu}
   on:dragstart={handleDragStart}
   on:dragend={handleDragEnd}
   on:touchstart={handleTouchStart}
