@@ -20,6 +20,9 @@
   let ttbProgress: { done: number; total: number } | null = null;
   let steamSyncing = false;
   let showHidden = false;
+  let draggingGame: Game | null = null;
+  let dropTarget: Status | null = null;
+  let statusPickerGame: Game | null = null;
 
   $: counts = $games.reduce((c, g) => { c[g.status] = (c[g.status] ?? 0) + 1; return c; }, {} as Record<string, number>);
 
@@ -135,6 +138,52 @@
     await games.load(showHidden);
   }
 
+  // Drag & Drop handlers
+  function handleDragStart(game: Game) {
+    draggingGame = game;
+  }
+
+  function handleDragEnd() {
+    draggingGame = null;
+    dropTarget = null;
+  }
+
+  function handleDragOver(e: DragEvent, status: Status) {
+    e.preventDefault();
+    if (e.dataTransfer) {
+      e.dataTransfer.dropEffect = 'move';
+    }
+    dropTarget = status;
+  }
+
+  function handleDragLeave() {
+    dropTarget = null;
+  }
+
+  async function handleDrop(e: DragEvent, newStatus: Status) {
+    e.preventDefault();
+    if (!draggingGame || draggingGame.status === newStatus) {
+      draggingGame = null;
+      dropTarget = null;
+      return;
+    }
+
+    await games.updateGame({ ...draggingGame, status: newStatus });
+    draggingGame = null;
+    dropTarget = null;
+  }
+
+  // Long press handler (mobile)
+  function handleLongPress(game: Game) {
+    statusPickerGame = game;
+  }
+
+  async function changeStatus(newStatus: Status) {
+    if (!statusPickerGame) return;
+    await games.updateGame({ ...statusPickerGame, status: newStatus });
+    statusPickerGame = null;
+  }
+
   onMount(() => {
     let dead = false;
     const cancelled = () => dead;
@@ -237,14 +286,27 @@
 
   <div class="sections">
     {#each grouped as group (group.key)}
-      <section class="section">
+      <section
+        class="section"
+        class:drop-target={dropTarget === group.key}
+        on:dragover={e => handleDragOver(e, group.key)}
+        on:dragleave={handleDragLeave}
+        on:drop={e => handleDrop(e, group.key)}
+        role="region"
+      >
         <SectionHead label={group.label} color={group.color} count={group.games.length} />
         {#if group.games.length === 0}
           <div class="empty">nothing here yet</div>
         {:else}
           <div class="card-grid">
             {#each group.games as g (g.id)}
-              <GameCard game={g} onClick={() => detail = g} />
+              <GameCard
+                game={g}
+                onClick={() => detail = g}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+                onLongPress={handleLongPress}
+              />
             {/each}
           </div>
         {/if}
@@ -277,6 +339,29 @@
     onHide={async id => { await games.hide(id); detail = null; }}
     onDelete={async id => { await games.delete(id); detail = null; }}
   />
+{/if}
+
+{#if statusPickerGame}
+  <div class="modal-bg" on:click|self={() => statusPickerGame = null} role="dialog" aria-modal="true">
+    <div class="status-picker">
+      <div class="status-picker-title">{statusPickerGame.title}</div>
+      <div class="status-picker-subtitle">Change status:</div>
+      <div class="status-picker-options">
+        {#each STATUS_GROUPS as sg}
+          <button
+            class="status-option"
+            class:active={statusPickerGame.status === sg.key}
+            style="border-color: {sg.color}; color: {sg.color}"
+            on:click={() => changeStatus(sg.key)}
+          >
+            <span class="status-dot" style="background: {sg.color}"></span>
+            {sg.label}
+          </button>
+        {/each}
+      </div>
+      <button class="status-cancel" on:click={() => statusPickerGame = null}>Cancel</button>
+    </div>
+  </div>
 {/if}
 
 <style>
@@ -344,9 +429,85 @@
   .np-grid::-webkit-scrollbar { display: none; }
 
   .sections { padding-top: 12px; }
-  .section { margin-top: 44px; }
+  .section { margin-top: 44px; transition: .2s; position: relative; }
+  .section.drop-target {
+    outline: 2px dashed var(--accent);
+    outline-offset: 8px;
+    background: rgba(163, 230, 53, 0.05);
+  }
   .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
   .empty { padding: 60px 0; text-align: center; color: var(--t3); font-size: 12px; }
+
+  /* Status picker modal */
+  .status-picker {
+    background: var(--s1);
+    border: 1px solid var(--border2);
+    padding: 20px;
+    max-width: 400px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  .status-picker-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  .status-picker-subtitle {
+    font-size: 10px;
+    color: var(--t2);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+  }
+  .status-picker-options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .status-option {
+    background: transparent;
+    border: 1px solid;
+    padding: 12px 16px;
+    font-family: var(--mono);
+    font-size: 12px;
+    cursor: pointer;
+    transition: .15s;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .status-option:hover {
+    background: var(--s2);
+  }
+  .status-option.active {
+    background: var(--s2);
+    border-width: 2px;
+  }
+  .status-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+  .status-cancel {
+    background: var(--s2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px;
+    font-family: var(--mono);
+    font-size: 11px;
+    cursor: pointer;
+    width: 100%;
+    transition: .15s;
+  }
+  .status-cancel:hover {
+    border-color: var(--border2);
+  }
 
   @media (max-width: 768px) {
     .page { padding: 0 24px 80px; }

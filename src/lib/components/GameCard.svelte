@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Game } from '../types';
+  import type { Game, Status } from '../types';
   import { STATUS_MAP } from '../constants';
   import { fmt, pct } from '../utils';
   import CoverArt from './CoverArt.svelte';
@@ -7,13 +7,80 @@
 
   export let game: Game;
   export let onClick: () => void;
+  export let onDragStart: ((game: Game) => void) | undefined = undefined;
+  export let onDragEnd: (() => void) | undefined = undefined;
+  export let onLongPress: ((game: Game) => void) | undefined = undefined;
 
   $: sc = STATUS_MAP[game.status];
   $: prog = pct(game.hrsIn, game.ttb);
   $: showBar = game.hrsIn > 0 || game.status === 'inProgress' || game.status === 'onShelf';
+
+  let isDragging = false;
+  let longPressTimer: ReturnType<typeof setTimeout>;
+  let longPressTriggered = false;
+
+  function handleDragStart(e: DragEvent) {
+    if (!onDragStart) return;
+    isDragging = true;
+    onDragStart(game);
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', game.id.toString());
+    }
+  }
+
+  function handleDragEnd() {
+    isDragging = false;
+    if (onDragEnd) onDragEnd();
+  }
+
+  function handleTouchStart(e: TouchEvent) {
+    if (!onLongPress) return;
+    longPressTriggered = false;
+    longPressTimer = setTimeout(() => {
+      longPressTriggered = true;
+      onLongPress(game);
+      // Haptic feedback if available
+      if ('vibrate' in navigator) {
+        navigator.vibrate(50);
+      }
+    }, 500); // 500ms for long press
+  }
+
+  function handleTouchEnd() {
+    clearTimeout(longPressTimer);
+  }
+
+  function handleTouchMove() {
+    clearTimeout(longPressTimer);
+  }
+
+  function handleClick(e: MouseEvent) {
+    // Don't trigger onClick if long press was triggered
+    if (longPressTriggered) {
+      e.preventDefault();
+      e.stopPropagation();
+      longPressTriggered = false;
+      return;
+    }
+    onClick();
+  }
 </script>
 
-<div class="card" on:click={onClick} role="button" tabindex="0" on:keydown={e => e.key === 'Enter' && onClick()}>
+<div
+  class="card"
+  class:dragging={isDragging}
+  draggable={onDragStart !== undefined}
+  on:click={handleClick}
+  on:dragstart={handleDragStart}
+  on:dragend={handleDragEnd}
+  on:touchstart={handleTouchStart}
+  on:touchend={handleTouchEnd}
+  on:touchmove={handleTouchMove}
+  role="button"
+  tabindex="0"
+  on:keydown={e => e.key === 'Enter' && onClick()}
+>
   <div class="art">
     <CoverArt {game} />
     {#if game.coop}<div class="coop">CO-OP</div>{/if}
@@ -52,6 +119,10 @@
     border-color: var(--border2);
     transform: translateY(-2px);
     box-shadow: 0 6px 24px rgba(0,0,0,0.5);
+  }
+  .card.dragging {
+    opacity: 0.5;
+    transform: scale(0.95);
   }
   .art {
     width: 100%;
