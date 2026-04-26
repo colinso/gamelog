@@ -227,7 +227,7 @@
   <header>
     <div class="logo-wrap">
       <button class="logo-btn" on:click={() => { filter = 'all'; search = ''; }} title="Go home">
-        <div class="logo">game<span>log</span></div>
+        <div class="logo"><span class="logo-game">game</span><span class="logo-log">log</span></div>
       </button>
       <div class="game-count">{$games.length} games in archive</div>
     </div>
@@ -390,7 +390,8 @@
   }
   .logo-btn { background: none; border: none; padding: 0; cursor: pointer; }
   .logo { font-size: 26px; font-weight: 600; letter-spacing: -1px; line-height: 1; }
-  .logo span { color: var(--accent); }
+  .logo-game { color: #111; }
+  .logo-log { color: var(--accent); }
   .game-count { font-size: 11px; color: var(--t3); margin-top: 3px; margin-left: 2px; }
   .header-right { margin-left: auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
