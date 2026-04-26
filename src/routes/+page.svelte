@@ -41,7 +41,7 @@
   }
 
   function showMore(key: string) {
-    extraRows = { ...extraRows, [key]: (extraRows[key] ?? 0) + PAGE_ROWS };
+    extraRows = { ...extraRows, [key]: Infinity };
   }
 
   function showLess(key: string) {
