@@ -1,6 +1,6 @@
 import { writable } from 'svelte/store';
 import type { Game, Status } from './types';
-import { isSteamCover } from './utils';
+import { isSteamCover, isGenericSteamSyncCover } from './utils';
 
 export type SteamGame = {
   steamAppId: number;
@@ -145,7 +145,7 @@ function createGamesStore() {
             steamAppId: sg.steamAppId,
             hrsIn: Math.max(sg.hrsIn, existing.hrsIn ?? 0),
             hrsLeft: Math.max(0, (existing.ttb || 0) - Math.max(sg.hrsIn, existing.hrsIn ?? 0)),
-            coverUrl: (!existing.coverUrl || isSteamCover(existing.coverUrl)) ? sg.coverUrl : existing.coverUrl,
+            coverUrl: (!existing.coverUrl || isGenericSteamSyncCover(existing.coverUrl)) ? sg.coverUrl : existing.coverUrl,
           };
           updates.push(updated);
         } else {

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { STATUS_MAP, PLATFORMS } from '../constants';
-  import { fmt, pct, isSteamCover } from '../utils';
+  import { fmt, pct, isSteamCover, isGenericSteamSyncCover } from '../utils';
   import type { Game, Status } from '../types';
   import CoverArt from './CoverArt.svelte';
   import Stars from './Stars.svelte';
@@ -26,13 +26,8 @@
   $: sc = STATUS_MAP[game.status];
   $: prog = pct(game.hrsIn, game.ttb);
 
-  // Auto-fix stale cloudflare cover URLs (broken for newer games) on mount
-  function isStaleCloudflareUrl(url: string | null | undefined): boolean {
-    return Boolean(url?.includes('cdn.cloudflare.steamstatic.com') && url?.endsWith('/header.jpg'));
-  }
-
   onMount(async () => {
-    if (useSteamImg && f.steamAppId && isStaleCloudflareUrl(f.coverUrl)) {
+    if (useSteamImg && f.steamAppId && isGenericSteamSyncCover(f.coverUrl)) {
       try {
         const res = await fetch(`/api/steam/appdetails?appid=${f.steamAppId}`);
         if (res.ok) {
