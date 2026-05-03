@@ -14,6 +14,9 @@ services:
       - STEAM_API_KEY=${STEAM_API_KEY}
       - STEAM_ACCOUNT_ID=${STEAM_ACCOUNT_ID}
       - RAWG_API_KEY=${RAWG_API_KEY}
+      - SWITCH_SESSION_TOKEN=${SWITCH_SESSION_TOKEN:-}
+      - SWITCH_DEVICE_ID=${SWITCH_DEVICE_ID:-}
+      - SWITCH_PLAYER_NAME=${SWITCH_PLAYER_NAME:-}
     volumes:
       - ./data:/app/data
     networks:
