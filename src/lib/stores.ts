@@ -10,6 +10,13 @@ export type SteamGame = {
   status: Status;
 };
 
+export type EpicGame = {
+  epicAppName: string;
+  title: string;
+  hrsIn: number;
+  status: Status;
+};
+
 export { isSteamCover };
 
 function createGamesStore() {
@@ -19,8 +26,8 @@ function createGamesStore() {
     subscribe,
     set,
 
-    // Load games from API
-    async load(includeHidden = false) {
+    // Load games from API — always includes hidden so client-side filtering works
+    async load(includeHidden = true) {
       const url = includeHidden ? '/api/games?includeHidden=true' : '/api/games';
       const res = await fetch(url);
       if (res.ok) {
@@ -183,6 +190,69 @@ function createGamesStore() {
       }
 
       // Reload from server
+      await this.load();
+    },
+
+    // Epic sync: merge Epic games with existing library
+    async epicSync(epicGames: EpicGame[]) {
+      const res = await fetch('/api/games?includeHidden=true');
+      if (!res.ok) {
+        console.error('[epic-sync] Failed to fetch library, aborting');
+        return;
+      }
+      const allGames: Game[] = await res.json();
+
+      const updates: Game[] = [];
+      const creates: Omit<Game, 'id'>[] = [];
+
+      for (const eg of epicGames) {
+        const byAppName = allGames.find(g => g.epicAppName === eg.epicAppName);
+        const byTitle = allGames.find(g => g.title.toLowerCase() === eg.title.toLowerCase());
+        const existing = byAppName ?? byTitle;
+
+        if (existing?.hidden) continue;
+
+        if (existing) {
+          const hrsIn = Math.max(eg.hrsIn, existing.hrsIn ?? 0);
+          updates.push({
+            ...existing,
+            title: eg.title,
+            epicAppName: eg.epicAppName,
+            hrsIn,
+            hrsLeft: Math.max(0, (existing.ttb || 0) - hrsIn),
+          });
+        } else {
+          creates.push({
+            title: eg.title,
+            platform: 'PC',
+            status: eg.status,
+            hrsIn: eg.hrsIn,
+            ttb: 0,
+            hrsLeft: 0,
+            rating: null,
+            coop: false,
+            coverUrl: null,
+            epicAppName: eg.epicAppName,
+          });
+        }
+      }
+
+      for (const game of updates) {
+        await fetch('/api/games', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(game),
+        });
+      }
+
+      if (creates.length > 0) {
+        await fetch('/api/games', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(creates),
+        });
+      }
+
       await this.load();
     },
   };

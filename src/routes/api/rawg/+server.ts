@@ -12,16 +12,18 @@ export const GET: RequestHandler = async ({ url }) => {
     throw error(503, 'RAWG API not configured');
   }
 
+  const abort = new AbortController();
+  const tid = setTimeout(() => abort.abort(), 8000);
+
   try {
     const res = await fetch(
-      `https://api.rawg.io/api/games?search=${encodeURIComponent(q)}&key=${RAWG_API_KEY}&page_size=5&search_precise=true`
+      `https://api.rawg.io/api/games?search=${encodeURIComponent(q)}&key=${RAWG_API_KEY}&page_size=5&search_precise=true`,
+      { signal: abort.signal }
     );
+    clearTimeout(tid);
 
     if (!res.ok) {
-      console.error('[rawg] RAWG API request failed', {
-        status: res.status,
-        statusText: res.statusText,
-      });
+      console.error('[rawg] RAWG API request failed', { status: res.status, statusText: res.statusText });
       throw error(502, 'RAWG API request failed');
     }
 
@@ -35,6 +37,8 @@ export const GET: RequestHandler = async ({ url }) => {
 
     return json(results);
   } catch (err: any) {
+    clearTimeout(tid);
+    if (err.name === 'AbortError') return json([]);
     if (err.status) throw err;
     console.error('[rawg] Unexpected error during RAWG search', err);
     throw error(500, 'RAWG search failed');

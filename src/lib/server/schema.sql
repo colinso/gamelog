@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS games (
   notes TEXT,
   cover_url TEXT,
   steam_app_id INTEGER,
+  epic_app_name TEXT,
   hidden INTEGER DEFAULT 0, -- hide from UI but keep in DB
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
@@ -21,6 +22,7 @@ CREATE TABLE IF NOT EXISTS games (
 -- Indexes for common queries
 CREATE INDEX IF NOT EXISTS idx_games_status ON games(status);
 CREATE INDEX IF NOT EXISTS idx_games_steam_app_id ON games(steam_app_id);
+CREATE INDEX IF NOT EXISTS idx_games_epic_app_name ON games(epic_app_name);
 CREATE INDEX IF NOT EXISTS idx_games_hidden ON games(hidden);
 CREATE INDEX IF NOT EXISTS idx_games_platform ON games(platform);
 

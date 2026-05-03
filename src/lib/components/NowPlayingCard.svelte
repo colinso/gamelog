@@ -102,13 +102,21 @@
     <div class="meta">
       <span class="platform">{game.platform}</span>
     </div>
-    <div class="prog-wrap">
-      <div class="bar-track"><div class="bar-fill" style="width: {prog}%"></div></div>
-      <div class="bar-labels">
-        <span class="bar-pct">{prog}%</span>
-        <span>{fmt(game.hrsIn)}h / {fmt(game.ttb)}h</span>
+    {#if game.ttb > 0}
+      <div class="prog-wrap">
+        <div class="bar-track"><div class="bar-fill" style="width: {prog}%"></div></div>
+        <div class="bar-labels">
+          <span class="bar-pct">{prog}%</span>
+          <span>{fmt(game.hrsIn)}h / {fmt(game.ttb)}h</span>
+        </div>
       </div>
-    </div>
+    {:else}
+      <div class="prog-wrap">
+        <div class="bar-labels">
+          <span>{fmt(game.hrsIn)}h played</span>
+        </div>
+      </div>
+    {/if}
   </div>
 </div>
 

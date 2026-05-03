@@ -146,6 +146,9 @@
           <div class="notes">{game.notes}</div>
         {/if}
         <div class="btn-row">
+          {#if game.steamAppId}
+            <a class="btn-secondary" href="https://store.steampowered.com/app/{game.steamAppId}" target="_blank" rel="noopener noreferrer">steam page</a>
+          {/if}
           <button class="btn-secondary" on:click={() => { onHide(game.id); onClose(); }}>hide from library</button>
           <button class="btn-danger" on:click={() => { onDelete(game.id); onClose(); }}>delete</button>
         </div>

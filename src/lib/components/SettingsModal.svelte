@@ -7,8 +7,58 @@
   export let onImport: (games: Game[], merge: boolean) => void;
   export let onSteamSync: () => void;
   export let steamSyncing: boolean;
+  export let onEpicSync: () => void;
+  export let epicSyncing: boolean;
   export let showHidden: boolean;
   export let onToggleHidden: (show: boolean) => void;
+
+  import { onMount } from 'svelte';
+
+  let epicConnected = false;
+  let epicAccountId = '';
+  let epicDisplayName = '';
+  let epicPaste = '';
+  let epicConnecting = false;
+  let epicError = '';
+
+  onMount(async () => {
+    const res = await fetch('/api/epic/auth');
+    if (res.ok) {
+      const data = await res.json();
+      epicConnected = data.connected;
+      epicAccountId = data.accountId ?? '';
+      epicDisplayName = data.displayName ?? data.accountId ?? '';
+    }
+  });
+
+  async function connectEpic() {
+    epicConnecting = true;
+    epicError = '';
+    try {
+      const parsed = JSON.parse(epicPaste.trim());
+      const res = await fetch('/api/epic/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(parsed),
+      });
+      const data = await res.json();
+      if (!res.ok) { epicError = data?.message ?? 'Import failed'; return; }
+      epicConnected = true;
+      epicAccountId = data.accountId;
+      epicDisplayName = data.displayName ?? data.accountId;
+      epicPaste = '';
+    } catch (e: any) {
+      epicError = e.message?.includes('JSON') ? 'Invalid JSON — paste the full file contents' : (e.message ?? 'Failed');
+    } finally {
+      epicConnecting = false;
+    }
+  }
+
+  async function disconnectEpic() {
+    await fetch('/api/epic/auth', { method: 'DELETE' });
+    epicConnected = false;
+    epicAccountId = '';
+  }
 
   $: lastSync = (() => {
     if (typeof localStorage === 'undefined') return null;
@@ -99,6 +149,39 @@
       </div>
 
       <div class="setting-section">
+        <div class="setting-label">Epic Games</div>
+        {#if epicConnected}
+          <div class="sync-row">
+            <button class="btn-secondary" on:click={onEpicSync} disabled={epicSyncing}>
+              {epicSyncing ? 'syncing…' : '⟳ sync epic library'}
+            </button>
+            <button class="btn-sm" on:click={disconnectEpic}>disconnect</button>
+          </div>
+          <div class="epic-meta">connected as {epicDisplayName}</div>
+        {:else}
+          <p class="epic-instructions">
+            Run these commands on any machine with Python, then paste the output below:
+          </p>
+          <pre class="epic-cmd">pip3 install legendary-gl
+legendary auth
+cat ~/.config/legendary/user.json</pre>
+          <textarea
+            class="form-input epic-paste"
+            placeholder="Paste user.json contents here…"
+            bind:value={epicPaste}
+            rows="3"
+          ></textarea>
+          <button
+            class="btn-secondary"
+            style="margin-top:6px"
+            on:click={connectEpic}
+            disabled={epicConnecting || !epicPaste.trim()}
+          >{epicConnecting ? 'importing…' : 'import credentials'}</button>
+          {#if epicError}<p class="epic-error">{epicError}</p>{/if}
+        {/if}
+      </div>
+
+      <div class="setting-section">
         <div class="setting-label">Library</div>
         <div class="toggle-row" style="margin-bottom:12px">
           <span class="toggle-label">Show hidden games</span>
@@ -138,6 +221,15 @@
   .btn-secondary { flex: 1; }
   .sync-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .sync-meta { font-size: 9px; color: var(--t3); }
+  .epic-meta { font-size: 9px; color: var(--t3); margin-top: 6px; }
+  .epic-instructions { font-size: 10px; color: var(--t2); margin: 0 0 6px; line-height: 1.6; }
+  .epic-cmd {
+    font-family: var(--mono); font-size: 10px; color: var(--text);
+    background: var(--s3); border: 1px solid var(--border);
+    padding: 8px 10px; margin: 0 0 8px; white-space: pre; overflow-x: auto;
+  }
+  .epic-paste { resize: vertical; font-size: 10px; }
+  .epic-error { font-size: 10px; color: var(--c-ab); margin: 6px 0 0; }
 
   .toggle-row { display: flex; align-items: center; justify-content: space-between; }
   .toggle-label { font-size: 11px; color: var(--text); font-family: var(--mono); }

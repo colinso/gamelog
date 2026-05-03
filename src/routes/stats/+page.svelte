@@ -33,15 +33,15 @@
   })).filter(sg => sg.count > 0);
   $: maxStatusCount = Math.max(...byStatus.map(s => s.count), 1);
 
-  // Rating distribution
+  // Rating distribution — ratings stored as star*2 (2,4,6,8,10) by Stars component
   $: rated = games.filter(g => g.rating != null);
   $: ratingDist = [1, 2, 3, 4, 5].map(r => ({
     stars: r,
-    count: rated.filter(g => g.rating === r).length,
+    count: rated.filter(g => g.rating === r * 2).length,
   }));
   $: maxRating = Math.max(...ratingDist.map(r => r.count), 1);
   $: avgRating = rated.length > 0
-    ? (rated.reduce((s, g) => s + g.rating!, 0) / rated.length).toFixed(1)
+    ? (rated.reduce((s, g) => s + g.rating!, 0) / rated.length / 2).toFixed(1)
     : null;
 </script>
 

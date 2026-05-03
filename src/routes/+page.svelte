@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { browser } from '$app/environment';
   import { games, isSteamCover } from '../lib/stores';
-  import type { SteamGame } from '../lib/stores';
+  import type { SteamGame, EpicGame } from '../lib/stores';
   import { STATUS_GROUPS, STATUS_MAP } from '../lib/constants';
   import { fmt } from '../lib/utils';
   import type { Game, Status } from '../lib/types';
@@ -21,6 +21,7 @@
   let fetchProgress: { done: number; total: number } | null = null;
   let ttbProgress: { done: number; total: number } | null = null;
   let steamSyncing = false;
+  let epicSyncing = false;
   let showHidden = false;
   let draggingGame: Game | null = null;
   let dropTarget: Status | null = null;
@@ -55,17 +56,25 @@
     STATUS_GROUPS.map(sg => [sg.key, (PAGE_ROWS + (extraRows[sg.key] ?? 0)) * gridCols])
   );
 
-  $: counts = $games.reduce((c, g) => { c[g.status] = (c[g.status] ?? 0) + 1; return c; }, {} as Record<string, number>);
+  // All non-hidden games (or all games when showHidden is toggled on)
+  $: visibleGames = $games.filter(g => !g.hidden || showHidden);
+
+  $: counts = visibleGames.reduce((c, g) => { c[g.status] = (c[g.status] ?? 0) + 1; return c; }, {} as Record<string, number>);
 
   const alpha = (games: Game[]) => [...games].sort((a, b) => a.title.localeCompare(b.title));
 
-  $: filtered = $games.filter(g => {
-    if (filter !== 'all' && g.status !== filter) return false;
-    if (search.trim()) return g.title.toLowerCase().includes(search.toLowerCase());
-    return true;
-  });
+  $: filtered = (() => {
+    if (search.trim()) {
+      // Search includes hidden games so the user can find and un-hide them
+      return $games.filter(g => {
+        if (filter !== 'all' && g.status !== filter) return false;
+        return g.title.toLowerCase().includes(search.toLowerCase());
+      });
+    }
+    return visibleGames.filter(g => filter === 'all' || g.status === filter);
+  })();
 
-  $: nowPlaying = alpha($games.filter(g => g.status === 'inProgress'));
+  $: nowPlaying = alpha(visibleGames.filter(g => g.status === 'inProgress'));
   $: showNP = filter === 'all' && !search.trim() && nowPlaying.length > 0;
 
   $: grouped = (() => {
@@ -75,7 +84,7 @@
     }
     return STATUS_GROUPS
       .filter(sg => sg.key !== 'inProgress')
-      .map(sg => ({ ...sg, games: alpha($games.filter(g => g.status === sg.key)) }))
+      .map(sg => ({ ...sg, games: alpha(visibleGames.filter(g => g.status === sg.key)) }))
       .filter(sg => sg.games.length > 0);
   })();
 
@@ -152,6 +161,37 @@
     }
   }
 
+  async function syncEpic(cancelled: () => boolean = () => false) {
+    console.info('[epic-sync] Starting sync');
+    epicSyncing = true;
+    try {
+      const res = await fetch('/api/epic');
+      if (res.status === 503) return; // not connected — silent no-op
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        console.error('[epic-sync] Server error', body);
+        alert(body?.error ?? `Epic sync failed (${res.status})`);
+        return;
+      }
+      const epicGames: EpicGame[] = await res.json();
+      if (!Array.isArray(epicGames)) return;
+      await games.epicSync(epicGames);
+      localStorage.setItem('epic_last_sync', new Date().toISOString());
+      console.info('[epic-sync] Completed', { count: epicGames.length });
+    } catch (err) {
+      console.warn('[epic-sync] Network error', err);
+      return;
+    } finally {
+      epicSyncing = false;
+    }
+
+    // Cover and TTB fetch run after epicSyncing=false so the progress bar is visible
+    await fetchMissingCovers(cancelled);
+    localStorage.setItem('cover_last_fetch', new Date().toISOString());
+    await fetchMissingTtb(cancelled);
+    localStorage.setItem('ttb_last_fetch', new Date().toISOString());
+  }
+
   // Lightweight sync: only recently played — runs on every load when full sync is fresh
   async function syncRecentSteam() {
     console.info('[steam-recent] Syncing recently played games');
@@ -175,24 +215,35 @@
   }
 
   async function fetchMissingCovers(cancelled: () => boolean) {
-    // Only fetch for games with no cover at all — never auto-replace a Steam cover
-    // the user may have explicitly chosen it via the "Use Steam image" toggle
     const missing = $games.filter(g => !g.coverUrl);
     if (!missing.length) return;
+    let done = 0;
     fetchProgress = { done: 0, total: missing.length };
-    for (let i = 0; i < missing.length; i++) {
+
+    const BATCH = 4;
+    for (let i = 0; i < missing.length; i += BATCH) {
       if (cancelled()) break;
-      const g = missing[i];
-      try {
-        const r = await fetch(`/api/rawg?q=${encodeURIComponent(g.title)}`);
-        if (r.ok) {
-          const results = await r.json();
-          const img = results[0]?.coverUrl ?? null;
-          if (img) await games.updateGame({ ...g, coverUrl: img });
-        }
-      } catch { /* ignore */ }
-      fetchProgress = { done: i + 1, total: missing.length };
-      if (i < missing.length - 1) await new Promise(r => setTimeout(r, 220));
+      const batch = missing.slice(i, Math.min(i + BATCH, missing.length));
+      await Promise.all(batch.map(async (g) => {
+        try {
+          const abort = new AbortController();
+          const timeout = setTimeout(() => abort.abort(), 8000);
+          const r = await fetch(`/api/rawg?q=${encodeURIComponent(g.title)}`, { signal: abort.signal });
+          clearTimeout(timeout);
+          if (r.ok) {
+            const results = await r.json();
+            const img = results[0]?.coverUrl ?? null;
+            const rawgTitle: string | null = results[0]?.title ?? null;
+            if (img) {
+              const title = rawgTitle && rawgTitle.toLowerCase().startsWith(g.title.toLowerCase()) && rawgTitle.length > g.title.length
+                ? rawgTitle : g.title;
+              await games.updateGame({ ...g, coverUrl: img, title });
+            }
+          }
+        } catch { /* ignore timeouts and network errors */ }
+        done++;
+        fetchProgress = { done, total: missing.length };
+      }));
     }
     fetchProgress = null;
   }
@@ -231,9 +282,8 @@
     ttbProgress = null;
   }
 
-  async function toggleHidden(show: boolean) {
+  function toggleHidden(show: boolean) {
     showHidden = show;
-    await games.load(showHidden);
   }
 
   // Drag & Drop handlers
@@ -304,8 +354,8 @@
         }
       }
 
-      // Load games from API
-      await games.load(showHidden);
+      // Always load all games so hidden games appear in search
+      await games.load(true);
 
       // Auto-sync Steam on every load:
       // - Full sync (owned + recently played) if >1hr stale
@@ -321,6 +371,10 @@
         await syncSteam();
       } else {
         await syncRecentSteam();
+      }
+
+      if (isStale('epic_last_sync', DAY)) {
+        await syncEpic(cancelled);
       }
 
       if (isStale('ttb_last_fetch', DAY)) {
@@ -347,7 +401,7 @@
       {#if nowPlaying.length > 0}
         <div class="game-count">{fmt(nowPlaying.reduce((s, g) => s + (g.hrsLeft ?? 0), 0))}h left playing</div>
       {:else}
-        <div class="game-count">{$games.length} games</div>
+        <div class="game-count">{visibleGames.length} games</div>
       {/if}
     </div>
     <div class="header-right">
@@ -374,6 +428,11 @@
     <div class="fetch-bar">
       <div class="fetch-track"><div class="fetch-fill" style="width:100%;opacity:0.5;animation:pulse 1s infinite alternate"></div></div>
       <span>syncing steam library…</span>
+    </div>
+  {:else if epicSyncing}
+    <div class="fetch-bar">
+      <div class="fetch-track"><div class="fetch-fill" style="width:100%;opacity:0.5;animation:pulse 1s infinite alternate"></div></div>
+      <span>syncing epic library…</span>
     </div>
   {:else if fetchProgress}
     <div class="fetch-bar">
@@ -445,13 +504,16 @@
         {:else}
           <div class="card-grid" use:gridObserver>
             {#each group.games.slice(0, visibleCounts[group.key]) as g (g.id)}
-              <GameCard
-                game={g}
-                onClick={() => detail = g}
-                onDragStart={handleDragStart}
-                onDragEnd={handleDragEnd}
-                onLongPress={handleLongPress}
-              />
+              <div class="card-wrap" class:card-hidden={g.hidden && search.trim()}>
+                <GameCard
+                  game={g}
+                  onClick={() => detail = g}
+                  onDragStart={handleDragStart}
+                  onDragEnd={handleDragEnd}
+                  onLongPress={handleLongPress}
+                />
+                {#if g.hidden && search.trim()}<span class="hidden-badge">hidden</span>{/if}
+              </div>
             {/each}
           </div>
           {#if group.games.length > visibleCounts[group.key]}
@@ -476,6 +538,8 @@
     onImport={async (imported, merge) => await games.import(imported, merge)}
     onSteamSync={syncSteam}
     {steamSyncing}
+    onEpicSync={syncEpic}
+    {epicSyncing}
     {showHidden}
     onToggleHidden={toggleHidden}
   />
@@ -603,6 +667,15 @@
   }
   .np-grid { display: flex; gap: 12px; overflow-x: auto; scrollbar-width: none; padding-bottom: 4px; }
   .np-grid::-webkit-scrollbar { display: none; }
+
+  .card-wrap { position: relative; }
+  .card-hidden { opacity: 0.5; }
+  .hidden-badge {
+    position: absolute; top: 6px; left: 6px;
+    background: var(--s3); border: 1px solid var(--border2);
+    color: var(--t3); font-size: 8px; font-family: var(--mono);
+    padding: 2px 5px; pointer-events: none; text-transform: uppercase; letter-spacing: .5px;
+  }
 
   .sections { padding-top: 12px; }
   .section { margin-top: 44px; transition: .2s; position: relative; }

@@ -9,7 +9,7 @@
   --border2: rgba(255,255,255,0.13);
   --text: #efefef;
   --t2: #888;
-  --t3: #444;
+  --t3: #777;
   --accent: #a3e635;
   --mono: 'JetBrains Mono', monospace;
   --c-ip: #a3e635;
@@ -25,7 +25,7 @@
 .theme-retro {
   --bg: #0d0820; --s1: #130d2e; --s2: #1d1440; --s3: #26194f;
   --border: rgba(120,80,255,0.15); --border2: rgba(120,80,255,0.3);
-  --accent: oklch(65% 0.25 285); --text: #e8deff; --t2: #9880cc; --t3: #5544aa;
+  --accent: oklch(65% 0.25 285); --text: #e8deff; --t2: #9880cc; --t3: #8877cc;
   --c-ip: oklch(65% 0.22 285); --c-os: #c084fc; --c-pn: #60a5fa;
   --c-bt: #22c55e; --c-ab: #ef4444; --c-wl: #a855f7; --c-ns: #5544aa;
 }
@@ -34,7 +34,7 @@
 .theme-pixel {
   --bg: #060e18; --s1: #0a1625; --s2: #0f2035; --s3: #152840;
   --border: rgba(0,180,255,0.12); --border2: rgba(0,180,255,0.28);
-  --accent: #00d4ff; --text: #ddeeff; --t2: #5588aa; --t3: #223344;
+  --accent: #00d4ff; --text: #ddeeff; --t2: #5588aa; --t3: #4477aa;
   --c-ip: #00d4ff; --c-os: #7b2fff; --c-pn: #4499ff;
   --c-bt: #00ff88; --c-ab: #ff4466; --c-wl: #aa44ff; --c-ns: #334455;
   --mono: 'VT323', monospace;
@@ -44,7 +44,7 @@
 .theme-gameboy {
   --bg: #3a3a3a; --s1: #444444; --s2: #505050; --s3: #5c5c5c;
   --border: rgba(155,188,15,0.25); --border2: rgba(155,188,15,0.5);
-  --accent: #9bbc0f; --text: #e8e8e0; --t2: #a8a8a0; --t3: #707068;
+  --accent: #9bbc0f; --text: #e8e8e0; --t2: #a8a8a0; --t3: #909088;
   --c-ip: #9bbc0f; --c-os: #e91e8c; --c-pn: #e91e8c;
   --c-bt: #9bbc0f; --c-ab: #e91e8c; --c-wl: #e91e8c; --c-ns: #505050;
   --mono: 'VT323', monospace;

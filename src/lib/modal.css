@@ -67,7 +67,7 @@
 .btn-secondary {
   flex: 1; background: var(--s3); color: var(--t2);
   padding: 9px; font-family: var(--mono); font-size: 11px;
-  border: 1px solid var(--border); cursor: pointer;
+  border: 1px solid var(--border); cursor: pointer; text-align: center; text-decoration: none;
 }
 .btn-secondary:hover { color: var(--text); }
 .btn-danger {

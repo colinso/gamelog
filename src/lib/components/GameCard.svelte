@@ -13,7 +13,7 @@
 
   $: sc = STATUS_MAP[game.status];
   $: prog = pct(game.hrsIn, game.ttb);
-  $: showBar = game.hrsIn > 0 || game.status === 'inProgress' || game.status === 'onShelf';
+  $: showBar = game.ttb > 0 && (game.hrsIn > 0 || game.status === 'inProgress' || game.status === 'onShelf');
 
   let isDragging = false;
   let longPressTimer: ReturnType<typeof setTimeout>;
@@ -94,22 +94,23 @@
   </div>
   <div class="info">
     <div class="title">{game.title}</div>
-    {#if showBar}
-      <div class="bar-track"><div class="bar-fill" style="width: {prog}%; background: {sc?.color ?? '#555'}"></div></div>
-      <div class="bottom">
+    <div class="bar-track" class:bar-visible={showBar}>
+      <div class="bar-fill" style="width: {prog}%; background: {sc?.color ?? '#555'}"></div>
+    </div>
+    <div class="bottom">
+      {#if showBar}
         <span class="pct" style="color: {sc?.color ?? '#555'}">{prog}%</span>
-        {#if game.rating != null}
-          <Stars value={game.rating} size={9} />
-        {:else}
-          <span class="hrs">{game.ttb > 0 ? `${fmt(game.ttb)}h` : ''}</span>
-        {/if}
-      </div>
-    {:else}
-      <div class="bottom">
+      {:else}
         <span class="ttb">{game.ttb > 0 ? `${fmt(game.ttb)}h` : ''}</span>
-        {#if game.rating != null}<Stars value={game.rating} size={9} />{/if}
-      </div>
-    {/if}
+      {/if}
+      {#if game.rating != null}
+        <Stars value={game.rating} size={9} />
+      {:else if !showBar && game.ttb === 0}
+        <span></span>
+      {:else if showBar}
+        <span class="hrs">{game.ttb > 0 ? `${fmt(game.ttb)}h` : ''}</span>
+      {/if}
+    </div>
   </div>
 </div>
 
@@ -148,19 +149,21 @@
     padding: 2px 5px;
     letter-spacing: .8px;
   }
-  .info { padding: 10px 12px 13px; }
+  .info { padding: 10px 12px 13px; height: 78px; overflow: hidden; }
   .title {
     font-size: 11px;
     font-weight: 500;
     color: var(--text);
     line-height: 1.35;
+    height: calc(2 * 1.35em);
     margin-bottom: 7px;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
-  .bar-track { background: var(--s3); height: 2px; width: 100%; margin-bottom: 4px; }
+  .bar-track { height: 2px; width: 100%; margin-bottom: 4px; opacity: 0; }
+  .bar-track.bar-visible { background: var(--s3); opacity: 1; }
   .bar-fill { height: 100%; transition: .3s; }
   .bottom { display: flex; align-items: center; justify-content: space-between; }
   .pct { font-size: 9px; font-weight: 600; letter-spacing: .3px; }
