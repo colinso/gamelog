@@ -40,77 +40,161 @@
   --mono: 'VT323', monospace;
 }
 
-/* Game Boy */
+/* Game Boy DMG — light green palette + pink accents */
 .theme-gameboy {
-  --bg: #3a3a3a; --s1: #444444; --s2: #505050; --s3: #5c5c5c;
-  --border: rgba(155,188,15,0.25); --border2: rgba(155,188,15,0.5);
-  --accent: #9bbc0f; --text: #e8e8e0; --t2: #a8a8a0; --t3: #909088;
-  --c-ip: #9bbc0f; --c-os: #e91e8c; --c-pn: #e91e8c;
-  --c-bt: #9bbc0f; --c-ab: #e91e8c; --c-wl: #e91e8c; --c-ns: #505050;
-  --mono: 'VT323', monospace;
+  --bg: #d8d4cc; --s1: #cad8b8; --s2: #bccba8; --s3: #aabd95;
+  --border: rgba(15,56,15,0.16); --border2: rgba(15,56,15,0.3);
+  --accent: #e85a9b;
+  --text: #0f380f; --t2: #2d5a2d; --t3: #5a7a5a;
+  --c-ip: #e85a9b; --c-os: #e85a9b; --c-pn: #2d5a2d;
+  --c-bt: #0f380f; --c-ab: #c44a4a; --c-wl: #a8447a; --c-ns: #5a7a5a;
 }
+.theme-gameboy .logo { font-family: 'Press Start 2P', monospace; font-size: 11px !important; letter-spacing: 0; color: #0f380f; }
+.theme-gameboy .modal-title { font-family: 'Press Start 2P', monospace; font-size: 9px !important; }
+.theme-gameboy .card { background: #cad8b8; border: 1px solid rgba(15,56,15,0.18); box-shadow: 1px 2px 0 rgba(15,56,15,0.08); }
+.theme-gameboy .card:hover { transform: translate(-1px,-1px); box-shadow: 2px 4px 8px rgba(15,56,15,0.18); border-color: #e85a9b; }
+.theme-gameboy .np-card { background: #cad8b8; border-color: rgba(15,56,15,0.18); }
+.theme-gameboy .coop { background: #e85a9b !important; color: #fff !important; }
+.theme-gameboy .btn-add { background: #e85a9b; color: #fff; }
+.theme-gameboy .btn-add:hover { background: #a8447a; filter: none; }
+.theme-gameboy .ftab { background: #cad8b8; color: #2d5a2d; border-color: rgba(15,56,15,0.16); }
+.theme-gameboy .ftab.active { background: #e85a9b !important; color: #fff !important; }
+.theme-gameboy .search-input { background: #f0ece2; color: #0f380f; border-color: rgba(15,56,15,0.22); }
+.theme-gameboy .search-input:focus { border-color: #e85a9b; }
+.theme-gameboy .form-input { background: #f0ece2; color: #0f380f; border-color: rgba(15,56,15,0.22); }
+.theme-gameboy .form-input:focus { border-color: #e85a9b; }
+.theme-gameboy .modal { background: #e2ddd2; border-color: rgba(15,56,15,0.24); }
+.theme-gameboy .modal-header { background: #e2ddd2; }
+.theme-gameboy .bar-fill { background: #e85a9b !important; }
+.theme-gameboy .fetch-fill { background: #e85a9b !important; }
 
-/* VT323 reads well at larger sizes — scale everything up for both themes */
-.theme-pixel .logo,
-.theme-gameboy .logo           { font-size: 32px !important; letter-spacing: 1px; }
+/* VT323 reads well at larger sizes — scale everything up */
+.theme-pixel .logo             { font-size: 32px !important; letter-spacing: 1px; }
 
 .theme-pixel .title,
-.theme-gameboy .title,
 .theme-pixel .np-title,
-.theme-gameboy .np-title,
-.theme-pixel .modal-title,
-.theme-gameboy .modal-title    { font-size: 18px !important; line-height: 1.5; }
+.theme-pixel .modal-title      { font-size: 18px !important; line-height: 1.5; }
 
 .theme-pixel .name,
-.theme-gameboy .name,
 .theme-pixel .ftab,
-.theme-gameboy .ftab,
 .theme-pixel .btn-add,
-.theme-gameboy .btn-add,
 .theme-pixel .btn-util,
-.theme-gameboy .btn-util,
 .theme-pixel .game-count,
-.theme-gameboy .game-count,
 .theme-pixel .search-input,
-.theme-gameboy .search-input,
 .theme-pixel .form-input,
-.theme-gameboy .form-input,
 .theme-pixel .btn-primary,
-.theme-gameboy .btn-primary,
 .theme-pixel .btn-secondary,
-.theme-gameboy .btn-secondary,
 .theme-pixel .toggle-label,
-.theme-gameboy .toggle-label,
-.theme-pixel .setting-label,
-.theme-gameboy .setting-label  { font-size: 16px !important; }
+.theme-pixel .setting-label    { font-size: 16px !important; }
 
 .theme-pixel .eyebrow,
-.theme-gameboy .eyebrow,
 .theme-pixel .dstat-label,
-.theme-gameboy .dstat-label,
 .theme-pixel .btn-sm,
-.theme-gameboy .btn-sm,
 .theme-pixel .btn-close,
-.theme-gameboy .btn-close,
 .theme-pixel .btn-danger,
-.theme-gameboy .btn-danger,
 .theme-pixel .form-label,
-.theme-gameboy .form-label,
 .theme-pixel .pct,
-.theme-gameboy .pct,
 .theme-pixel .hrs,
-.theme-gameboy .hrs,
 .theme-pixel .ttb,
-.theme-gameboy .ttb,
 .theme-pixel .platform,
-.theme-gameboy .platform,
 .theme-pixel .bar-pct,
-.theme-gameboy .bar-pct,
-.theme-pixel .count,
-.theme-gameboy .count          { font-size: 14px !important; }
+.theme-pixel .count            { font-size: 14px !important; }
 
-.theme-pixel .dstat-val,
-.theme-gameboy .dstat-val      { font-size: 18px !important; }
+.theme-pixel .dstat-val        { font-size: 18px !important; }
+
+/* CRT — phosphor green on black + scanlines */
+.theme-crt {
+  --bg: #0a1410; --s1: #0e1c16; --s2: #13261e; --s3: #193027;
+  --border: rgba(80,255,160,0.12); --border2: rgba(80,255,160,0.28);
+  --accent: oklch(82% 0.22 150); --text: #b8ffd0; --t2: #5fbf85; --t3: #2e7a52;
+  --c-ip: oklch(82% 0.22 150); --c-bt: oklch(82% 0.22 150); --c-ab: #ef4444;
+  --c-ns: #2e7a52; --c-os: #5fbf85; --c-pn: oklch(82% 0.22 150); --c-wl: #5fbf85;
+}
+.theme-crt { position: relative; }
+.theme-crt::before {
+  content: '';
+  position: fixed; inset: 0;
+  pointer-events: none; z-index: 9999;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0,0,0,0) 0, rgba(0,0,0,0) 2px,
+    rgba(0,0,0,0.18) 3px, rgba(0,0,0,0) 4px
+  );
+  mix-blend-mode: multiply;
+}
+.theme-crt::after {
+  content: '';
+  position: fixed; inset: 0;
+  pointer-events: none; z-index: 9998;
+  background: radial-gradient(ellipse at center, transparent 75%, rgba(0,0,0,0.25) 100%);
+}
+.theme-crt .logo { text-shadow: 0 0 8px currentColor, 0 0 16px currentColor; }
+.theme-crt .card:hover { box-shadow: 0 0 24px rgba(80,255,160,0.25), 0 8px 30px rgba(0,0,0,0.6); }
+.theme-crt .title, .theme-crt .ftab { text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* Vaporwave — hot pink + cyan on deep navy */
+.theme-vapor {
+  --bg: #0a0420; --s1: #0e2a3d; --s2: #11354d; --s3: #15425e;
+  --border: rgba(77,217,255,0.22); --border2: rgba(77,217,255,0.4);
+  --accent: #ff4dd2; --text: #e8faff; --t2: #8fc4d8; --t3: #5a8a9c;
+  --c-ip: #ff4dd2; --c-bt: #22c55e; --c-ab: #ef4444; --c-wl: #ff4dd2; --c-pn: #4dd9ff; --c-ns: #5a8a9c; --c-os: #4dd9ff;
+}
+.theme-vapor { background: linear-gradient(180deg, #0a0420 0%, #1a0540 50%, #0a0420 100%) !important; }
+.theme-vapor .logo { color: #ff4dd2; text-shadow: 0 0 16px #ff4dd2, 3px 3px 0 #4dd9ff; }
+.theme-vapor .card { background: linear-gradient(135deg, #0e2a3d, #15425e); border-color: rgba(77,217,255,0.28); }
+.theme-vapor .card:hover { border-color: #4dd9ff; box-shadow: 0 0 24px rgba(77,217,255,0.45), 0 0 48px rgba(255,77,210,0.2); }
+.theme-vapor .np-card { background: linear-gradient(135deg, #0e2a3d, #15425e); border-color: rgba(77,217,255,0.28); }
+.theme-vapor .btn-add { background: linear-gradient(135deg, #ff4dd2, #4dd9ff); color: #0a0420; font-weight: 700; }
+.theme-vapor .bar-fill { background: linear-gradient(90deg, #ff4dd2, #4dd9ff) !important; }
+.theme-vapor .fetch-fill { background: linear-gradient(90deg, #ff4dd2, #4dd9ff) !important; }
+.theme-vapor .ftab { background: #0e2a3d; border-color: rgba(77,217,255,0.22); }
+.theme-vapor .ftab.active { box-shadow: 0 0 12px currentColor; }
+.theme-vapor .search-input { background: #0e2a3d; border-color: rgba(77,217,255,0.28); }
+.theme-vapor .search-input:focus { border-color: #4dd9ff; background: #15425e; }
+.theme-vapor .form-input { background: #0e2a3d; border-color: rgba(77,217,255,0.28); }
+.theme-vapor .modal { background: #0e2a3d; border-color: rgba(77,217,255,0.35); }
+.theme-vapor .modal-header { background: #0e2a3d; }
+
+/* Paper — ink on cream */
+.theme-paper {
+  --bg: #f5f0e6; --s1: #ede6d6; --s2: #e3dac5; --s3: #d4c8ad;
+  --border: rgba(40,30,20,0.12); --border2: rgba(40,30,20,0.22);
+  --accent: #c9472f; --text: #1a1410; --t2: #5a4a3a; --t3: #8a7560;
+  --c-ns: #8a7560; --c-ip: #c9472f; --c-bt: #3a6b5e; --c-ab: #7a3030; --c-wl: #7a4a8a; --c-pn: #3a5a7a; --c-os: #c9472f;
+}
+.theme-paper { background: #f5f0e6 !important; background-image: radial-gradient(rgba(40,30,20,0.04) 1px, transparent 1px) !important; background-size: 4px 4px !important; }
+.theme-paper .logo { color: #c9472f; text-shadow: none; }
+.theme-paper .card { background: #fbf7ee; border: 1px solid rgba(40,30,20,0.15); box-shadow: 1px 2px 0 rgba(40,30,20,0.06); }
+.theme-paper .card:hover { box-shadow: 2px 4px 12px rgba(40,30,20,0.12); transform: translateY(-2px); }
+.theme-paper .np-card { background: #fbf7ee; border-color: rgba(40,30,20,0.15); }
+.theme-paper .coop { background: #3a6b5e !important; color: #fff !important; }
+.theme-paper .btn-add { background: #1a1410; color: #f5f0e6; }
+.theme-paper .btn-add:hover { background: #c9472f; filter: none; }
+.theme-paper .ftab { background: #fbf7ee; color: #5a4a3a; border-color: rgba(40,30,20,0.15); }
+.theme-paper .search-input { background: #fbf7ee; color: #1a1410; border-color: rgba(40,30,20,0.2); }
+.theme-paper .form-input { background: #fbf7ee; color: #1a1410; border-color: rgba(40,30,20,0.2); }
+.theme-paper .modal { background: #fbf7ee; border-color: rgba(40,30,20,0.18); }
+.theme-paper .modal-header { background: #fbf7ee; }
+.theme-paper .bar-fill { background: linear-gradient(90deg, #c9472f, #3a6b5e) !important; }
+.theme-paper .fetch-fill { background: linear-gradient(90deg, #c9472f, #3a6b5e) !important; }
+
+/* Synthwave — sunset gradient */
+.theme-synth {
+  --bg: #1a0a2e; --s1: #251038; --s2: #321845; --s3: #402055;
+  --border: rgba(255,140,80,0.18); --border2: rgba(255,140,80,0.4);
+  --accent: #ff6ec7; --text: #ffe0f0; --t2: #c89dc0; --t3: #7a5d80;
+  --c-ip: #ff6ec7; --c-bt: #22c55e; --c-ab: #ef4444; --c-wl: #ff6ec7; --c-pn: #ffaa44; --c-ns: #7a5d80; --c-os: #ffaa44;
+}
+.theme-synth { background: linear-gradient(180deg, #1a0a2e 0%, #3d1450 40%, #7a2860 70%, #ff6ec7 100%) !important; background-attachment: fixed !important; }
+.theme-synth .logo { background: linear-gradient(180deg, #ffaa44 0%, #ff6ec7 100%); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; }
+.theme-synth .card { background: rgba(37,16,56,0.7); backdrop-filter: blur(10px); border-color: rgba(255,140,80,0.2); }
+.theme-synth .card:hover { box-shadow: 0 0 20px rgba(255,110,199,0.4), 0 0 40px rgba(255,170,68,0.2); border-color: rgba(255,170,68,0.5); }
+.theme-synth .np-card { background: rgba(37,16,56,0.7); backdrop-filter: blur(10px); border-color: rgba(255,140,80,0.2); }
+.theme-synth .btn-add { background: linear-gradient(135deg, #ff6ec7, #ffaa44); color: #1a0a2e; font-weight: 700; box-shadow: 0 4px 16px rgba(255,110,199,0.4); }
+.theme-synth .bar-fill { background: linear-gradient(90deg, #ffaa44, #ff6ec7) !important; }
+.theme-synth .fetch-fill { background: linear-gradient(90deg, #ffaa44, #ff6ec7) !important; }
+.theme-synth .modal { background: rgba(37,16,56,0.95); backdrop-filter: blur(20px); border-color: rgba(255,140,80,0.3); }
+.theme-synth .modal-header { background: rgba(37,16,56,0.95); }
 
 
 html, body {
