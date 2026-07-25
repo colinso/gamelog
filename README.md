@@ -2,6 +2,8 @@
 
 A SvelteKit PWA for tracking your game library, playtime, and progress across platforms.
 
+<img src="./screenshots/frontpage.png" width="700">
+
 ## Features
 
 **Core**
